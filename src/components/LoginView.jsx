@@ -77,7 +77,7 @@ export const LoginView = () => {
             color: 'var(--primary-red)',
             letterSpacing: '-0.02em'
           }}>
-            Amul
+            Dairy
           </span>
           <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
             • The Taste of India ERP
