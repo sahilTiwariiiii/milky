@@ -3,7 +3,7 @@ const env = require('../config/env');
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: env.NODE_ENV === 'test' ? 1000 : 20, // max attempts
+  max: 10000, // relaxed for seamless testing across clients
   message: {
     success: false,
     message: 'Too many authentication attempts from this IP, please try again after 15 minutes.'
@@ -14,7 +14,7 @@ const authLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: env.NODE_ENV === 'test' ? 10000 : 500,
+  max: 100000,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'

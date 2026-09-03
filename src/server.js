@@ -56,8 +56,8 @@ connectDB()
     // Automatically seed default accounts if database is fresh/empty
     await autoSeedIfEmpty();
 
-    const server = app.listen(env.PORT, () => {
-      console.log(`[Server] Running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+    const server = app.listen(env.PORT, '0.0.0.0', () => {
+      console.log(`[Server] Running in ${env.NODE_ENV} mode on 0.0.0.0:${env.PORT}`);
       console.log(`[Server] API available at http://localhost:${env.PORT}/api`);
     });
 
