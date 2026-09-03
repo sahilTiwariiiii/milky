@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { Pagination } from './Pagination';
 import {
   ReceiptText,
   Calendar,
@@ -10,7 +11,9 @@ import {
   Printer,
   Search,
   Filter,
-  CheckCircle2
+  Package,
+  CheckCircle2,
+  RefreshCw
 } from 'lucide-react';
 
 export const TransactionsView = () => {
@@ -21,25 +24,48 @@ export const TransactionsView = () => {
   const [summary, setSummary] = useState({ totalRevenue: 0, totalVolume: 0, totalTransactions: 0 });
   const [loading, setLoading] = useState(true);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, totalPages: 1, totalItems: 0 });
+
   // Filters
+  const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('');
   const [adminsList, setAdminsList] = useState([]);
+  const [productsList, setProductsList] = useState([]);
 
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = {
+        page,
+        limit
+      };
+      if (search.trim()) params.search = search.trim();
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
       if (selectedAdminId) params.adminId = selectedAdminId;
+      if (selectedProductId) params.productId = selectedProductId;
 
       const res = await api.getTransactions(params);
       if (res.success) {
-        setTransactions(res.data.transactions || []);
-        if (res.data.summary) {
+        setTransactions(res.data?.transactions || []);
+        if (res.data?.summary) {
           setSummary(res.data.summary);
+        }
+        if (res.meta) {
+          setMeta(res.meta);
+        } else {
+          setMeta({
+            page,
+            limit,
+            totalPages: Math.ceil((res.data?.summary?.totalTransactions || 1) / limit) || 1,
+            totalItems: res.data?.summary?.totalTransactions || res.data?.transactions?.length || 0
+          });
         }
       }
     } catch (err) {
@@ -57,15 +83,33 @@ export const TransactionsView = () => {
         }
       }).catch(() => {});
     }
+
+    api.getProducts({ limit: 100 }).then((res) => {
+      if (res.success && res.data?.products) {
+        setProductsList(res.data.products);
+      }
+    }).catch(() => {});
   }, [isSuperAdmin]);
 
   useEffect(() => {
+    setPage(1);
+  }, [search, startDate, endDate, selectedAdminId, selectedProductId]);
+
+  useEffect(() => {
     fetchTransactions();
-  }, [startDate, endDate, selectedAdminId, user]);
+  }, [page, limit, search, startDate, endDate, selectedAdminId, selectedProductId, user]);
+
+  const resetFilters = () => {
+    setSearch('');
+    setStartDate('');
+    setEndDate('');
+    setSelectedAdminId('');
+    setSelectedProductId('');
+  };
 
   return (
     <div>
-      {/* 1. FINANCIAL SUMMARY KPI TILES (Image 2 style) */}
+      {/* 1. FINANCIAL SUMMARY KPI TILES */}
       <div className="enterprise-kpi-grid">
         <div className="kpi-tile kpi-green">
           <div className="kpi-icon-box kpi-icon-green">
@@ -117,10 +161,27 @@ export const TransactionsView = () => {
           </button>
         </div>
 
-        {/* Toolbar with Filters */}
+        {/* Toolbar with Comprehensive Filters */}
         <div className="panel-toolbar no-print">
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', width: '100%' }}>
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: '220px', flex: 1 }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search Customer, Mobile, Token, or Product..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                style={{ paddingLeft: '2rem' }}
+              />
+              <Search
+                size={14}
+                style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+              />
+            </div>
+
+            {/* From Date */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               <Calendar size={14} />
               <span>From:</span>
               <input
@@ -132,7 +193,8 @@ export const TransactionsView = () => {
               />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+            {/* To Date */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               <span>To:</span>
               <input
                 type="date"
@@ -143,6 +205,22 @@ export const TransactionsView = () => {
               />
             </div>
 
+            {/* Product Filter */}
+            <select
+              className="form-control"
+              style={{ width: 'auto', minWidth: '160px', padding: '0.35rem 0.65rem' }}
+              value={selectedProductId}
+              onChange={(e) => setSelectedProductId(e.target.value)}
+            >
+              <option value="">All Dairy Products</option>
+              {productsList.map((p) => (
+                <option key={p._id} value={p._id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Admin Filter (for Superadmin) */}
             {isSuperAdmin && (
               <select
                 className="form-control"
@@ -150,24 +228,21 @@ export const TransactionsView = () => {
                 value={selectedAdminId}
                 onChange={(e) => setSelectedAdminId(e.target.value)}
               >
-                <option value="">All Route Admins (Global)</option>
+                <option value="">All Delivery Admins</option>
                 {adminsList.map((a) => (
                   <option key={a._id} value={a._id}>
-                    Admin: {a.name}
+                    Route: {a.name}
                   </option>
                 ))}
               </select>
             )}
 
-            {(startDate || endDate || selectedAdminId) && (
+            {/* Reset Button */}
+            {(search || startDate || endDate || selectedAdminId || selectedProductId) && (
               <button
                 type="button"
                 className="btn btn-xs btn-outline"
-                onClick={() => {
-                  setStartDate('');
-                  setEndDate('');
-                  setSelectedAdminId('');
-                }}
+                onClick={resetFilters}
               >
                 Reset Filters
               </button>
@@ -203,7 +278,9 @@ export const TransactionsView = () => {
               <tbody>
                 {transactions.map((tx, idx) => (
                   <tr key={tx._id}>
-                    <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{idx + 1}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>
+                      {(page - 1) * limit + idx + 1}
+                    </td>
                     <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                       {new Date(tx.createdAt).toLocaleDateString('en-IN', {
                         day: '2-digit',
@@ -249,6 +326,16 @@ export const TransactionsView = () => {
             </table>
           </div>
         )}
+
+        {/* Pagination Controls */}
+        <Pagination
+          meta={meta}
+          onPageChange={(newPage) => setPage(newPage)}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       </div>
     </div>
   );

@@ -4,12 +4,14 @@ import { ToastProvider, useToast } from './context/ToastContext';
 import { Navbar } from './components/Navbar';
 import { LoginView } from './components/LoginView';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
+import { AdminDashboard } from './components/AdminDashboard';
 import { AdminManagement } from './components/AdminManagement';
 import { CustomerManagement } from './components/CustomerManagement';
 import { ProductManagement } from './components/ProductManagement';
 import { TransactionsView } from './components/TransactionsView';
 import { QrScanView } from './components/QrScanView';
 import { GiveProductModal } from './components/GiveProductModal';
+import { SystemConfigView } from './components/SystemConfigView';
 import { api } from './services/api';
 import { Loader2 } from 'lucide-react';
 
@@ -91,10 +93,17 @@ const MainLayout = () => {
 
       <main className="main-content">
         {currentView === 'dashboard' && (
-          <SuperAdminDashboard
-            onNavigate={setCurrentView}
-            onOpenScanner={() => setCurrentView('scan')}
-          />
+          isSuperAdmin ? (
+            <SuperAdminDashboard
+              onNavigate={setCurrentView}
+              onOpenScanner={() => setCurrentView('scan')}
+            />
+          ) : (
+            <AdminDashboard
+              onNavigate={setCurrentView}
+              onOpenScanner={() => setCurrentView('scan')}
+            />
+          )
         )}
 
         {currentView === 'scan' && <QrScanView />}
@@ -106,6 +115,8 @@ const MainLayout = () => {
         {currentView === 'products' && <ProductManagement />}
 
         {currentView === 'transactions' && <TransactionsView />}
+
+        {currentView === 'settings' && isSuperAdmin && <SystemConfigView onNavigate={setCurrentView} />}
       </main>
 
       {/* Quick Scanned Customer Modal */}

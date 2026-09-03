@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import { Pagination } from './Pagination';
 import {
   Package,
   Plus,
@@ -10,7 +11,8 @@ import {
   Trash2,
   X,
   Sparkles,
-  Layers
+  Layers,
+  Search
 } from 'lucide-react';
 
 const STANDARD_UNITS = [
@@ -34,6 +36,15 @@ export const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination & Filters
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, totalPages: 1, totalItems: 0 });
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [availableCategories, setAvailableCategories] = useState(['Dairy', 'Milk', 'Curd', 'Ghee', 'Paneer']);
+
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -50,12 +61,40 @@ export const ProductManagement = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    api.getSystemConfig()
+      .then((res) => {
+        if (res.success && res.data?.config?.categories) {
+          setAvailableCategories(res.data.config.categories);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await api.getProducts({ limit: 100 });
+      const params = {
+        page,
+        limit
+      };
+      if (search.trim()) params.search = search.trim();
+      if (selectedCategory) params.category = selectedCategory;
+      if (selectedStatus) params.status = selectedStatus;
+
+      const res = await api.getProducts(params);
       if (res.success && res.data?.products) {
         setProducts(res.data.products);
+        if (res.meta) {
+          setMeta(res.meta);
+        } else {
+          setMeta({
+            page,
+            limit,
+            totalPages: Math.ceil((res.data.products.length || 1) / limit) || 1,
+            totalItems: res.data.products.length
+          });
+        }
       }
     } catch (err) {
       showError(err.message || 'Failed to fetch products');
@@ -65,8 +104,12 @@ export const ProductManagement = () => {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [search, selectedCategory, selectedStatus]);
+
+  useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [page, limit, search, selectedCategory, selectedStatus]);
 
   const getEffectiveUnit = () => {
     if (formData.unitSelect === 'custom') {
@@ -216,6 +259,63 @@ export const ProductManagement = () => {
           </span>
         </div>
 
+        {/* Toolbar with Search, Category & Status */}
+        <div className="panel-toolbar no-print">
+          <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search product name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ paddingLeft: '2rem' }}
+            />
+            <Search
+              size={14}
+              style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+            />
+          </div>
+
+          <select
+            className="form-control"
+            style={{ width: 'auto', minWidth: '160px' }}
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+          >
+            <option value="">All Categories</option>
+            {availableCategories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="form-control"
+            style={{ width: 'auto', minWidth: '140px' }}
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
+          >
+            <option value="">All Statuses</option>
+            <option value="ACTIVE">Active Only</option>
+            <option value="INACTIVE">Inactive Only</option>
+          </select>
+
+          {(search || selectedCategory || selectedStatus) && (
+            <button
+              type="button"
+              className="btn btn-xs btn-outline"
+              onClick={() => {
+                setSearch('');
+                setSelectedCategory('');
+                setSelectedStatus('');
+              }}
+            >
+              Reset
+            </button>
+          )}
+        </div>
+
         {/* Table */}
         {loading ? (
           <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -309,6 +409,16 @@ export const ProductManagement = () => {
             </table>
           </div>
         )}
+
+        {/* Pagination Bar */}
+        <Pagination
+          meta={meta}
+          onPageChange={(newPage) => setPage(newPage)}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       </div>
 
       {/* Add Product Modal */}

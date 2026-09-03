@@ -1,0 +1,9 @@
+{
+  "appId": "com.dairy.milky",
+  "appName": "Milky Dairy",
+  "webDir": "dist",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "http"
+  }
+}

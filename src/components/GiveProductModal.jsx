@@ -12,12 +12,100 @@ import {
   Sparkles
 } from 'lucide-react';
 
+// Helper to generate 1 to 125 quantity options with fractional sub-units
+const getQuantityOptions = (unit = '') => {
+  const u = (unit || '').toLowerCase();
+  const isLitre = u.includes('litre') || u === 'l';
+  const isKg = u.includes('kg') || u.includes('kilo');
+
+  const options = [];
+
+  if (isLitre) {
+    options.push(
+      { value: '0.25', label: '250 ml (0.25 Litre)' },
+      { value: '0.5', label: '500 ml (½ Litre)' },
+      { value: '0.75', label: '750 ml (¾ Litre)' }
+    );
+    for (let i = 1; i <= 125; i++) {
+      options.push({ value: String(i), label: `${i} Litre` });
+      if (i <= 10) {
+        options.push({ value: `${i}.5`, label: `${i}.5 Litre (${i}L 500ml)` });
+      }
+    }
+  } else if (isKg) {
+    options.push(
+      { value: '0.1', label: '100 gm (0.10 Kg)' },
+      { value: '0.2', label: '200 gm (0.20 Kg)' },
+      { value: '0.25', label: '250 gm (¼ Kg)' },
+      { value: '0.5', label: '500 gm (½ Kg)' },
+      { value: '0.75', label: '750 gm (¾ Kg)' }
+    );
+    for (let i = 1; i <= 125; i++) {
+      options.push({ value: String(i), label: `${i} Kg` });
+      if (i <= 10) {
+        options.push({ value: `${i}.5`, label: `${i}.5 Kg (${i}kg 500gm)` });
+      }
+    }
+  } else {
+    for (let i = 1; i <= 125; i++) {
+      options.push({ value: String(i), label: `${i} ${unit || 'Units'}` });
+    }
+  }
+
+  return options;
+};
+
+// Quick-select preset chips
+const getQuickChips = (unit = '') => {
+  const u = (unit || '').toLowerCase();
+  if (u.includes('litre') || u === 'l') {
+    return [
+      { val: '0.25', label: '250 ml' },
+      { val: '0.5', label: '500 ml' },
+      { val: '1', label: '1 L' },
+      { val: '2', label: '2 L' },
+      { val: '3', label: '3 L' },
+      { val: '5', label: '5 L' },
+      { val: '10', label: '10 L' },
+      { val: '25', label: '25 L' },
+      { val: '50', label: '50 L' },
+      { val: '100', label: '100 L' },
+      { val: '125', label: '125 L' }
+    ];
+  } else if (u.includes('kg') || u.includes('kilo')) {
+    return [
+      { val: '0.1', label: '100 gm' },
+      { val: '0.25', label: '250 gm' },
+      { val: '0.5', label: '500 gm' },
+      { val: '1', label: '1 Kg' },
+      { val: '2', label: '2 Kg' },
+      { val: '5', label: '5 Kg' },
+      { val: '10', label: '10 Kg' },
+      { val: '25', label: '25 Kg' },
+      { val: '50', label: '50 Kg' },
+      { val: '100', label: '100 Kg' },
+      { val: '125', label: '125 Kg' }
+    ];
+  }
+  return [
+    { val: '1', label: '1 Unit' },
+    { val: '2', label: '2 Units' },
+    { val: '5', label: '5 Units' },
+    { val: '10', label: '10 Units' },
+    { val: '25', label: '25 Units' },
+    { val: '50', label: '50 Units' },
+    { val: '100', label: '100 Units' },
+    { val: '125', label: '125 Units' }
+  ];
+};
+
 export const GiveProductModal = ({ customer, onClose, onTransactionCreated }) => {
   const { showSuccess, showError } = useToast();
 
   const [products, setProducts] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState('1');
+  const [isCustomQty, setIsCustomQty] = useState(false);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [history, setHistory] = useState([]);
@@ -172,19 +260,76 @@ export const GiveProductModal = ({ customer, onClose, onTransactionCreated }) =>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                  Quantity ({selectedProduct?.unit || 'unit'})
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  className="form-control"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  placeholder="e.g. 2"
-                  required
-                />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                  <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    Quantity ({selectedProduct?.unit || 'L / Kg'}) *
+                  </label>
+                  <button
+                    type="button"
+                    style={{ background: 'none', border: 'none', color: 'var(--primary-red)', fontSize: '0.74rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                    onClick={() => setIsCustomQty(!isCustomQty)}
+                  >
+                    {isCustomQty ? 'Switch to Dropdown (1-125)' : 'Custom Decimal Input'}
+                  </button>
+                </div>
+
+                {!isCustomQty ? (
+                  <select
+                    className="form-control"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    required
+                  >
+                    <optgroup label={`Common Sub-Units (${selectedProduct?.unit || 'Unit'})`}>
+                      {getQuantityOptions(selectedProduct?.unit).filter((o) => parseFloat(o.value) < 1).map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label={`1 to 125 ${selectedProduct?.unit || 'Units'}`}>
+                      {getQuantityOptions(selectedProduct?.unit).filter((o) => parseFloat(o.value) >= 1).map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                ) : (
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    max="125"
+                    className="form-control"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    placeholder={`e.g. 1.75 ${selectedProduct?.unit || 'L'}`}
+                    required
+                  />
+                )}
+
+                {/* Quick-Select Preset Chips */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.5rem' }}>
+                  {getQuickChips(selectedProduct?.unit).map((chip) => (
+                    <button
+                      key={chip.val}
+                      type="button"
+                      style={{
+                        background: quantity === chip.val ? 'var(--primary-red)' : '#f3f4f6',
+                        color: quantity === chip.val ? '#ffffff' : 'var(--text-main)',
+                        border: `1px solid ${quantity === chip.val ? 'var(--primary-red)' : '#e5e7eb'}`,
+                        borderRadius: '12px',
+                        padding: '0.2rem 0.5rem',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        setQuantity(chip.val);
+                        setIsCustomQty(false);
+                      }}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -196,14 +341,24 @@ export const GiveProductModal = ({ customer, onClose, onTransactionCreated }) =>
               padding: '0.85rem 1.15rem',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
             }}>
               <div>
-                <div style={{ fontSize: '0.78rem', color: '#166534', fontWeight: 700, textTransform: 'uppercase' }}>
+                <div style={{ fontSize: '0.74rem', color: '#166534', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Billing Rate Calculation
                 </div>
-                <div style={{ fontSize: '0.88rem', color: '#14532d', fontWeight: 600, marginTop: '0.15rem' }}>
-                  {numQty} {selectedProduct?.unit || 'L'} &times; ₹{unitPrice}/{selectedProduct?.unit || 'L'}
+                <div style={{ fontSize: '0.92rem', color: '#14532d', fontWeight: 700, marginTop: '0.2rem' }}>
+                  {numQty < 1 && (selectedProduct?.unit || '').toLowerCase().includes('litre') ? (
+                    <span>{numQty * 1000} ml ({numQty} Litre)</span>
+                  ) : numQty < 1 && (selectedProduct?.unit || '').toLowerCase().includes('kg') ? (
+                    <span>{numQty * 1000} gm ({numQty} Kg)</span>
+                  ) : (
+                    <span>{numQty} {selectedProduct?.unit || 'Units'}</span>
+                  )}
+                  <span style={{ color: '#16a34a', margin: '0 0.4rem' }}>&times;</span>
+                  <span>₹{unitPrice} per {selectedProduct?.unit || 'Unit'}</span>
                 </div>
               </div>
 
@@ -211,7 +366,7 @@ export const GiveProductModal = ({ customer, onClose, onTransactionCreated }) =>
                 <div style={{ fontSize: '0.72rem', color: '#166534', textTransform: 'uppercase', fontWeight: 700 }}>
                   Total Billable
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#15803d' }}>
+                <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#15803d', lineHeight: 1.1 }}>
                   ₹{totalAmount}
                 </div>
               </div>

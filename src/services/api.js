@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const rawUrl = import.meta.env.VITE_API_URL || import.meta.env.VITE_BACKEND_URL || '/api';
+const cleanUrl = rawUrl.replace(/\/+$/, '');
+const API_BASE = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
 
 export const api = {
   getToken() {
@@ -104,7 +106,11 @@ export const api = {
   },
 
   getCustomerByQr(qrToken) {
-    return this.request(`/customers/qr/${encodeURIComponent(qrToken.trim())}`);
+    if (!qrToken) throw new Error('QR Token is required');
+    let clean = (qrToken || '').trim().replace(/^["']|["']$/g, '');
+    const match = clean.match(/CUST_[A-Za-z0-9]+/i);
+    const token = match ? match[0] : clean;
+    return this.request(`/customers/qr/${encodeURIComponent(token)}`);
   },
 
   createCustomer(customerData) {
@@ -136,6 +142,54 @@ export const api = {
   getCustomerTransactions(customerId, params = {}) {
     const query = new URLSearchParams(params).toString();
     return this.request(`/customers/${customerId}/transactions${query ? `?${query}` : ''}`);
+  },
+
+  async uploadFile(fileOrData) {
+    const token = this.getToken();
+    let body;
+    const headers = {};
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (fileOrData instanceof FormData) {
+      body = fileOrData;
+    } else if (typeof window !== 'undefined' && fileOrData instanceof File) {
+      body = new FormData();
+      body.append('file', fileOrData);
+    } else if (typeof fileOrData === 'object') {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify(fileOrData);
+    } else {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify({ fileUrl: fileOrData });
+    }
+
+    const res = await fetch(`${API_BASE}/upload`, {
+      method: 'POST',
+      headers,
+      body
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(data.message || 'File upload failed');
+      error.status = res.status;
+      throw error;
+    }
+    return data;
+  },
+
+  getSystemConfig() {
+    return this.request('/system-config');
+  },
+
+  updateSystemConfig(configData) {
+    return this.request('/system-config', {
+      method: 'PUT',
+      body: JSON.stringify(configData)
+    });
   },
 
   // Product endpoints
