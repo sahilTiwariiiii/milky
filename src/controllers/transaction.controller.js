@@ -57,6 +57,31 @@ class TransactionController {
       next(error);
     }
   }
+
+  static async updateTransaction(req, res, next) {
+    try {
+      const transaction = await TransactionService.updateTransaction(
+        req.params.id,
+        req.body,
+        req.user
+      );
+      return ApiResponse.success(res, 'Transaction updated successfully', { transaction });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteTransaction(req, res, next) {
+    try {
+      const result = await TransactionService.deleteTransaction(
+        req.params.id,
+        req.user
+      );
+      return ApiResponse.success(res, 'Transaction deleted successfully', result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = TransactionController;

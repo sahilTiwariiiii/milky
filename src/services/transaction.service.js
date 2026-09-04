@@ -70,15 +70,18 @@ class TransactionService {
    * Get transaction history for a specific customer
    */
   static async getCustomerTransactions(customerId, queryParams, user) {
-    // 1. Verify customer exists
-    const customer = await Customer.findById(customerId);
+    // 1. Verify customer exists and populate admin details
+    const customer = await Customer.findById(customerId).populate('adminId', 'name email mobile');
     if (!customer) {
       throw new AppError('Customer not found', 404);
     }
 
     // 2. Admin Isolation Check
     if (user.role === ROLES.ADMIN) {
-      if (customer.adminId.toString() !== user._id.toString()) {
+      const customerAdminId = customer.adminId?._id
+        ? customer.adminId._id.toString()
+        : customer.adminId?.toString();
+      if (customerAdminId !== user._id.toString()) {
         throw new AppError(
           'Access denied: You cannot view transaction history for another Admin\'s customer.',
           403
@@ -102,20 +105,26 @@ class TransactionService {
       }
     }
 
+    const aggMatch = { customerId: customer._id };
+    if (filter.createdAt) {
+      aggMatch.createdAt = filter.createdAt;
+    }
+
     const [transactions, total, summary] = await Promise.all([
       Transaction.find(filter)
-        .populate('adminId', 'name email')
+        .populate('adminId', 'name email mobile')
         .populate('productId', 'name category unit')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
       Transaction.countDocuments(filter),
       Transaction.aggregate([
-        { $match: { customerId: customer._id } },
+        { $match: aggMatch },
         {
           $group: {
             _id: null,
             totalSpent: { $sum: '$totalAmount' },
+            totalVolume: { $sum: '$quantity' },
             totalTransactions: { $sum: 1 }
           }
         }
@@ -127,12 +136,22 @@ class TransactionService {
     return {
       customer: {
         id: customer._id,
+        _id: customer._id,
         name: customer.name,
         mobile: customer.mobile,
-        qrToken: customer.qrToken
+        qrToken: customer.qrToken,
+        qrCode: customer.qrCode,
+        address: customer.address || '',
+        adharNumber: customer.adharNumber || '',
+        panNumber: customer.panNumber || '',
+        image: customer.image || customer.profileImage || '',
+        profileImage: customer.profileImage || customer.image || '',
+        status: customer.status,
+        adminId: customer.adminId
       },
       summary: {
         totalSpent: summary[0]?.totalSpent || 0,
+        totalVolume: summary[0]?.totalVolume || 0,
         totalTransactions: summary[0]?.totalTransactions || 0
       },
       transactions,
@@ -249,6 +268,79 @@ class TransactionService {
     }
 
     return transaction;
+  }
+
+  /**
+   * Update transaction entry (quantity, price, product, notes, date)
+   */
+  static async updateTransaction(transactionId, updateData, user) {
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      throw new AppError('Transaction not found', 404);
+    }
+
+    // Admin Isolation: Admin can only edit their own transactions
+    if (user.role === ROLES.ADMIN) {
+      if (transaction.adminId.toString() !== user._id.toString()) {
+        throw new AppError('Access denied: You cannot edit another admin\'s transaction record.', 403);
+      }
+    }
+
+    if (updateData.productId) {
+      const product = await Product.findById(updateData.productId);
+      if (product) {
+        transaction.productId = product._id;
+        transaction.productName = product.name;
+        transaction.unit = product.unit;
+        if (updateData.priceAtTransaction === undefined) {
+          transaction.priceAtTransaction = product.price;
+        }
+      }
+    }
+
+    if (updateData.priceAtTransaction !== undefined) {
+      transaction.priceAtTransaction = Number(updateData.priceAtTransaction);
+    }
+
+    if (updateData.quantity !== undefined) {
+      transaction.quantity = Number(updateData.quantity);
+    }
+
+    if (updateData.notes !== undefined) {
+      transaction.notes = updateData.notes;
+    }
+
+    if (updateData.createdAt) {
+      transaction.createdAt = new Date(updateData.createdAt);
+    }
+
+    // Recalculate total amount
+    transaction.totalAmount = Math.round(transaction.quantity * transaction.priceAtTransaction * 100) / 100;
+    await transaction.save();
+
+    return Transaction.findById(transaction._id)
+      .populate('customerId', 'name mobile qrToken')
+      .populate('adminId', 'name email mobile')
+      .populate('productId', 'name category unit price');
+  }
+
+  /**
+   * Delete a transaction record
+   */
+  static async deleteTransaction(transactionId, user) {
+    const transaction = await Transaction.findById(transactionId);
+    if (!transaction) {
+      throw new AppError('Transaction not found', 404);
+    }
+
+    if (user.role === ROLES.ADMIN) {
+      if (transaction.adminId.toString() !== user._id.toString()) {
+        throw new AppError('Access denied: You cannot delete another admin\'s transaction record.', 403);
+      }
+    }
+
+    await Transaction.findByIdAndDelete(transactionId);
+    return { message: 'Transaction record deleted successfully' };
   }
 }
 
