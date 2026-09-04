@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { GiveProductModal } from './GiveProductModal';
 import { PrintableQrBadge } from './PrintableQrBadge';
+import { Pagination } from './Pagination';
+import { CustomerDetailPage } from './CustomerDetailPage';
 import {
   Users,
   UserPlus,
@@ -20,7 +22,11 @@ import {
   ShieldCheck,
   CheckCircle2,
   Eye,
-  Sparkles
+  Sparkles,
+  Upload,
+  Image as ImageIcon,
+  CreditCard,
+  FileText
 } from 'lucide-react';
 
 export const CustomerManagement = () => {
@@ -30,6 +36,14 @@ export const CustomerManagement = () => {
   const [customers, setCustomers] = useState([]);
   const [adminsList, setAdminsList] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Dedicated Page Customer View
+  const [viewingCustomer, setViewingCustomer] = useState(null);
+
+  // Pagination & Meta
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, totalPages: 1, totalItems: 0 });
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,29 +56,47 @@ export const CustomerManagement = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [activeBadgeCustomer, setActiveBadgeCustomer] = useState(null);
   const [activeGiveProductCustomer, setActiveGiveProductCustomer] = useState(null);
-  const [viewCustomerModal, setViewCustomerModal] = useState(null); // Full customer details with QR
 
   // Form State
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     name: '',
     mobile: '',
     address: '',
+    adharNumber: '',
+    panNumber: '',
+    image: '',
+    profileImage: '',
     adminId: '',
     status: 'ACTIVE'
-  });
+  };
+  const [formData, setFormData] = useState(initialFormState);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchCustomers = async () => {
     setLoading(true);
     try {
-      const params = {};
-      if (searchTerm) params.search = searchTerm;
+      const params = {
+        page,
+        limit
+      };
+      if (searchTerm.trim()) params.search = searchTerm.trim();
       if (filterAdminId) params.adminId = filterAdminId;
       if (activeTab !== 'ALL') params.status = activeTab;
 
       const res = await api.getCustomers(params);
       if (res.success && res.data?.customers) {
         setCustomers(res.data.customers);
+        if (res.meta) {
+          setMeta(res.meta);
+        } else {
+          setMeta({
+            page,
+            limit,
+            totalPages: Math.ceil((res.data.customers.length || 1) / limit) || 1,
+            totalItems: res.data.customers.length
+          });
+        }
       }
     } catch (err) {
       showError(err.message || 'Failed to fetch customers');
@@ -75,30 +107,57 @@ export const CustomerManagement = () => {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      api.getAdmins({ limit: 100 }).then((res) => {
-        if (res.success && res.data?.admins) {
-          setAdminsList(res.data.admins);
-          if (res.data.admins.length > 0 && !formData.adminId) {
-            setFormData((prev) => ({ ...prev, adminId: res.data.admins[0]._id }));
+      api.getAdmins({ limit: 100 })
+        .then((res) => {
+          if (res.success && res.data?.admins) {
+            setAdminsList(res.data.admins);
           }
-        }
-      }).catch(() => {});
+        })
+        .catch(() => {});
     }
   }, [isSuperAdmin]);
 
   useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterAdminId, activeTab]);
+
+  useEffect(() => {
     fetchCustomers();
-  }, [searchTerm, filterAdminId, activeTab, user]);
+  }, [page, limit, searchTerm, filterAdminId, activeTab, user]);
+
+  // Handle Image Upload
+  const handleImageFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const res = await api.uploadFile(file);
+      if (res.success && res.data?.url) {
+        setFormData((prev) => ({ ...prev, image: res.data.url, profileImage: res.data.url }));
+        showSuccess('Photo uploaded successfully');
+      }
+    } catch (err) {
+      showError(err.message || 'Image upload failed');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleCreateCustomer = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     try {
+      const imgVal = formData.profileImage || formData.image || '';
       const payload = {
-        name: formData.name,
-        mobile: formData.mobile,
-        address: formData.address,
-        adminId: isSuperAdmin ? formData.adminId : user.id,
+        name: formData.name.trim(),
+        mobile: formData.mobile.trim(),
+        address: formData.address.trim(),
+        adharNumber: formData.adharNumber.trim(),
+        panNumber: formData.panNumber.trim().toUpperCase(),
+        image: imgVal,
+        profileImage: imgVal,
+        adminId: isSuperAdmin ? (formData.adminId || adminsList[0]?._id) : user?.id,
         status: formData.status
       };
 
@@ -106,7 +165,7 @@ export const CustomerManagement = () => {
       if (res.success && res.data?.customer) {
         showSuccess(`Customer "${res.data.customer.name}" created with QR Pass!`);
         setShowCreateModal(false);
-        setFormData({ name: '', mobile: '', address: '', adminId: adminsList[0]?._id || '', status: 'ACTIVE' });
+        setFormData(initialFormState);
         fetchCustomers();
         setViewCustomerModal(res.data.customer);
       }
@@ -123,10 +182,15 @@ export const CustomerManagement = () => {
 
     setSubmitting(true);
     try {
+      const imgVal = formData.profileImage || formData.image || '';
       const payload = {
-        name: formData.name,
-        mobile: formData.mobile,
-        address: formData.address,
+        name: formData.name.trim(),
+        mobile: formData.mobile.trim(),
+        address: formData.address.trim(),
+        adharNumber: formData.adharNumber.trim(),
+        panNumber: formData.panNumber.trim().toUpperCase(),
+        image: imgVal,
+        profileImage: imgVal,
         status: formData.status,
         ...(isSuperAdmin && { adminId: formData.adminId })
       };
@@ -137,6 +201,9 @@ export const CustomerManagement = () => {
         setShowEditModal(false);
         setEditingCustomer(null);
         fetchCustomers();
+        if (viewingCustomer && (viewingCustomer._id === editingCustomer._id || viewingCustomer.id === editingCustomer._id)) {
+          setViewingCustomer(res.data.customer);
+        }
       }
     } catch (err) {
       showError(err.message || 'Failed to update customer');
@@ -155,7 +222,9 @@ export const CustomerManagement = () => {
       if (res.success && res.data?.customer) {
         showSuccess(`New QR Pass Generated! Token: ${res.data.customer.qrToken}`);
         fetchCustomers();
-        setViewCustomerModal(res.data.customer);
+        if (viewingCustomer && (viewingCustomer._id === customer._id || viewingCustomer.id === customer._id)) {
+          setViewingCustomer(res.data.customer);
+        }
       }
     } catch (err) {
       showError(err.message || 'Failed to regenerate QR pass');
@@ -179,14 +248,34 @@ export const CustomerManagement = () => {
   const openEditModal = (cust) => {
     setEditingCustomer(cust);
     setFormData({
-      name: cust.name,
-      mobile: cust.mobile,
+      name: cust.name || '',
+      mobile: cust.mobile || '',
       address: cust.address || '',
-      adminId: cust.adminId?._id || cust.adminId,
-      status: cust.status
+      adharNumber: cust.adharNumber || '',
+      panNumber: cust.panNumber || '',
+      image: cust.profileImage || cust.image || '',
+      profileImage: cust.profileImage || cust.image || '',
+      adminId: cust.adminId?._id || cust.adminId || '',
+      status: cust.status || 'ACTIVE'
     });
     setShowEditModal(true);
   };
+
+  // Dedicated Page: When customer is selected, render full page instead of modal
+  if (viewingCustomer) {
+    return (
+      <CustomerDetailPage
+        customer={viewingCustomer}
+        onBack={() => {
+          setViewingCustomer(null);
+          fetchCustomers();
+        }}
+        onEditCustomer={(cust) => {
+          openEditModal(cust);
+        }}
+      />
+    );
+  }
 
   return (
     <div>
@@ -204,11 +293,8 @@ export const CustomerManagement = () => {
             style={{ background: '#fff', color: 'var(--primary-red)' }}
             onClick={() => {
               setFormData({
-                name: '',
-                mobile: '',
-                address: '',
-                adminId: isSuperAdmin && adminsList.length > 0 ? adminsList[0]._id : user?.id,
-                status: 'ACTIVE'
+                ...initialFormState,
+                adminId: isSuperAdmin && adminsList.length > 0 ? adminsList[0]._id : user?.id
               });
               setShowCreateModal(true);
             }}
@@ -225,7 +311,7 @@ export const CustomerManagement = () => {
             className={`sub-tab-btn ${activeTab === 'ALL' ? 'active' : ''}`}
             onClick={() => setActiveTab('ALL')}
           >
-            All Customers ({customers.length})
+            All Customers ({meta.totalItems})
           </button>
           <button
             type="button"
@@ -243,36 +329,46 @@ export const CustomerManagement = () => {
           </button>
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar with Search and Admin Filter */}
         <div className="panel-toolbar">
-          <div style={{ display: 'flex', gap: '0.5rem', flex: 1, maxWidth: '380px' }}>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search Name, Phone, or QR Token..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div style={{ display: 'flex', gap: '0.5rem', flex: 1, maxWidth: '420px' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by Name, Mobile, or QR Token..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: '2rem' }}
+              />
+              <Search
+                size={14}
+                style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+              />
+            </div>
           </div>
 
           {isSuperAdmin && (
-            <select
-              className="form-control"
-              style={{ width: 'auto', minWidth: '170px' }}
-              value={filterAdminId}
-              onChange={(e) => setFilterAdminId(e.target.value)}
-            >
-              <option value="">All Delivery Routes / Admins</option>
-              {adminsList.map((a) => (
-                <option key={a._id} value={a._id}>
-                  Route: {a.name}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>Assigned Admin:</span>
+              <select
+                className="form-control"
+                style={{ width: 'auto', minWidth: '190px' }}
+                value={filterAdminId}
+                onChange={(e) => setFilterAdminId(e.target.value)}
+              >
+                <option value="">All Delivery Routes / Admins</option>
+                {adminsList.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    Route: {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
         </div>
 
-        {/* Table with VISIBLE QR CODE THUMBNAIL */}
+        {/* Table with Customer Details, Image & QR */}
         {loading ? (
           <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
             Loading customer master records...
@@ -287,11 +383,12 @@ export const CustomerManagement = () => {
               <thead>
                 <tr>
                   <th>S.No.</th>
+                  <th>Customer Profile</th>
                   <th>Customer QR Pass</th>
-                  <th>Customer Name</th>
-                  <th>Phone / Mobile</th>
+                  <th>Contact Phone</th>
+                  <th>Govt IDs (Aadhaar/PAN)</th>
                   <th>Delivery Address</th>
-                  <th>Assigned Route Admin</th>
+                  <th>Assigned Route</th>
                   <th>Status</th>
                   <th style={{ textAlign: 'right' }}>Process / Actions</th>
                 </tr>
@@ -299,9 +396,48 @@ export const CustomerManagement = () => {
               <tbody>
                 {customers.map((c, idx) => (
                   <tr key={c._id}>
-                    <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{idx + 1}</td>
+                    <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>
+                      {(page - 1) * limit + idx + 1}
+                    </td>
 
-                    {/* Prominent Generated QR Code Preview Column */}
+                    {/* Customer Avatar & Name */}
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        {c.profileImage || c.image ? (
+                          <img
+                            src={c.profileImage || c.image}
+                            alt={c.name}
+                            className="table-avatar-img"
+                            onClick={() => setViewingCustomer(c)}
+                            style={{ cursor: 'pointer' }}
+                            title="Click to view Customer Profile & Daily Orders"
+                          />
+                        ) : (
+                          <div
+                            className="table-avatar-fallback"
+                            onClick={() => setViewingCustomer(c)}
+                            style={{ cursor: 'pointer' }}
+                            title="Click to view Customer Profile & Daily Orders"
+                          >
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div
+                            style={{ fontWeight: 700, color: 'var(--text-heading)', cursor: 'pointer' }}
+                            onClick={() => setViewingCustomer(c)}
+                            title="Click to view Customer Profile & Daily Orders"
+                          >
+                            {c.name}
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            ID: {c.qrToken}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* QR Code Column */}
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         {c.qrCode ? (
@@ -309,8 +445,8 @@ export const CustomerManagement = () => {
                             src={c.qrCode}
                             alt={`QR for ${c.name}`}
                             className="table-qr-thumb"
-                            title="Click to view QR Pass & Details"
-                            onClick={() => setViewCustomerModal(c)}
+                            title="Click to view Customer Profile & Daily Orders"
+                            onClick={() => setViewingCustomer(c)}
                           />
                         ) : (
                           <div style={{ width: '42px', height: '42px', background: '#f5ebe0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -322,24 +458,34 @@ export const CustomerManagement = () => {
                           <button
                             type="button"
                             style={{ background: 'none', border: 'none', color: 'var(--primary-red)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', padding: 0, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '2px' }}
-                            onClick={() => setViewCustomerModal(c)}
+                            onClick={() => setViewingCustomer(c)}
                           >
                             <Eye size={11} />
-                            <span>View QR Details</span>
+                            <span>View Details</span>
                           </button>
                         </div>
                       </div>
                     </td>
 
-                    <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
-                      <span style={{ cursor: 'pointer' }} onClick={() => setViewCustomerModal(c)}>
-                        {c.name}
-                      </span>
-                    </td>
-
                     <td>{c.mobile}</td>
 
-                    <td style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>
+                    {/* Aadhaar / PAN */}
+                    <td style={{ fontSize: '0.76rem' }}>
+                      {c.adharNumber ? (
+                        <div style={{ color: '#15803d', fontWeight: 600 }}>
+                          Aadhaar: •••• {c.adharNumber.slice(-4)}
+                        </div>
+                      ) : (
+                        <div style={{ color: 'var(--text-dim)' }}>No Aadhaar</div>
+                      )}
+                      {c.panNumber && (
+                        <div style={{ color: '#0369a1', fontWeight: 600 }}>
+                          PAN: {c.panNumber}
+                        </div>
+                      )}
+                    </td>
+
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.76rem', maxWidth: '200px' }}>
                       {c.address || 'Standard Hub Delivery'}
                     </td>
 
@@ -357,9 +503,20 @@ export const CustomerManagement = () => {
                       <div style={{ display: 'inline-flex', gap: '0.3rem' }}>
                         <button
                           type="button"
+                          className="btn btn-xs btn-outline"
+                          onClick={() => setViewingCustomer(c)}
+                          title="View Full Customer Page, Daily Orders & Monthly Bill"
+                          style={{ color: 'var(--primary-red)', borderColor: '#fca5a5' }}
+                        >
+                          <FileText size={12} />
+                          <span>View & Bill</span>
+                        </button>
+
+                        <button
+                          type="button"
                           className="btn btn-xs btn-success"
                           onClick={() => setActiveGiveProductCustomer(c)}
-                          title="Record distribution for this customer"
+                          title="Record milk for this customer"
                         >
                           <Package size={12} />
                           <span>Give Milk</span>
@@ -372,7 +529,7 @@ export const CustomerManagement = () => {
                           title="Print Customer QR ID Card"
                         >
                           <Printer size={12} />
-                          <span>Print Pass</span>
+                          <span>Pass</span>
                         </button>
 
                         <button
@@ -411,118 +568,26 @@ export const CustomerManagement = () => {
             </table>
           </div>
         )}
+
+        {/* Pagination Bar */}
+        <Pagination
+          meta={meta}
+          onPageChange={(newPage) => setPage(newPage)}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       </div>
 
-      {/* FULL CUSTOMER DETAILS WITH GENERATED QR MODAL (Point 4) */}
-      {viewCustomerModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '460px' }}>
-            <div className="modal-header">
-              <h3>
-                <QrCode size={16} />
-                <span>Customer QR Pass & Details</span>
-              </h3>
-              <button type="button" className="close-btn" onClick={() => setViewCustomerModal(null)}>
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-              {/* QR Image Box */}
-              <div style={{
-                background: '#ffffff',
-                border: '2px solid var(--primary-red)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '1rem',
-                display: 'inline-flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                boxShadow: 'var(--shadow-sm)',
-                marginBottom: '1rem'
-              }}>
-                <img
-                  src={viewCustomerModal.qrCode}
-                  alt={`QR for ${viewCustomerModal.name}`}
-                  style={{ width: '160px', height: '160px', marginBottom: '0.5rem' }}
-                />
-                <span className="badge-qr-token" style={{ fontSize: '0.88rem', padding: '0.2rem 0.6rem' }}>
-                  {viewCustomerModal.qrToken}
-                </span>
-              </div>
-
-              <h4 style={{ fontWeight: 800, fontSize: '1.15rem', color: 'var(--text-heading)', marginBottom: '0.25rem' }}>
-                {viewCustomerModal.name}
-              </h4>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginBottom: '1rem' }}>
-                Phone: <strong>{viewCustomerModal.mobile}</strong> • Address: {viewCustomerModal.address || 'Standard Hub'}
-              </div>
-
-              {/* Route Assignment info */}
-              <div style={{
-                width: '100%',
-                background: 'var(--primary-red-soft)',
-                border: '1px solid var(--primary-red-border)',
-                borderRadius: 'var(--radius-xs)',
-                padding: '0.65rem 0.85rem',
-                fontSize: '0.78rem',
-                textAlign: 'left',
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginBottom: '1rem'
-              }}>
-                <div>
-                  <span style={{ color: 'var(--text-muted)' }}>Assigned Route Admin: </span>
-                  <strong style={{ color: 'var(--primary-red-dark)' }}>{viewCustomerModal.adminId?.name || 'Assigned Admin'}</strong>
-                </div>
-                <div>
-                  <span className={viewCustomerModal.status === 'ACTIVE' ? 'badge-status-green' : 'badge-status-red'}>
-                    {viewCustomerModal.status}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  style={{ flex: 1 }}
-                  onClick={() => {
-                    const cust = viewCustomerModal;
-                    setViewCustomerModal(null);
-                    setActiveGiveProductCustomer(cust);
-                  }}
-                >
-                  <Package size={14} />
-                  <span>Scan & Give Milk</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => {
-                    const cust = viewCustomerModal;
-                    setViewCustomerModal(null);
-                    setActiveBadgeCustomer(cust);
-                  }}
-                >
-                  <Printer size={14} />
-                  <span>Print Pass</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Customer Modal */}
+      {/* CREATE CUSTOMER MODAL WITH AADHAAR, PAN, ADDRESS, PHOTO */}
       {showCreateModal && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content modal-lg">
             <div className="modal-header">
               <h3>
                 <UserPlus size={16} />
-                <span>Register Customer & Generate QR Pass</span>
+                <span>Register New Customer with Complete Details</span>
               </h3>
               <button type="button" className="close-btn" onClick={() => setShowCreateModal(false)}>
                 <X size={16} />
@@ -530,52 +595,129 @@ export const CustomerManagement = () => {
             </div>
 
             <form onSubmit={handleCreateCustomer}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    Customer Full Name
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g. Rahul Sharma"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {/* Full Name */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      Customer Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. Ramesh Patel"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  {/* Mobile */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      Mobile Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      placeholder="e.g. 9876543210"
+                      value={formData.mobile}
+                      onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    Mobile Phone Number
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="e.g. 9876543210"
-                    value={formData.mobile}
-                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                    required
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {/* Aadhaar */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      Aadhaar Card Number (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. 1234 5678 9012"
+                      value={formData.adharNumber}
+                      onChange={(e) => setFormData({ ...formData, adharNumber: e.target.value })}
+                    />
+                  </div>
+
+                  {/* PAN Card */}
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      PAN Card Number (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="e.g. ABCDE1234F"
+                      value={formData.panNumber}
+                      onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                    />
+                  </div>
                 </div>
 
+                {/* Delivery Address */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    Delivery Address / Flat No
+                    Delivery Address / House / Flat
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     className="form-control"
-                    placeholder="e.g. Flat 302, Green Valley Apts"
+                    rows={2}
+                    placeholder="e.g. Flat 302, Sai Residency, Main Market Road"
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>
 
+                {/* Customer Photo Upload */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                    Customer Photo / Document Image
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    {formData.image ? (
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={formData.image}
+                          alt="Customer preview"
+                          style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border-medium)' }}
+                        />
+                        <button
+                          type="button"
+                          style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={() => setFormData({ ...formData, image: '' })}
+                          title="Remove image"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="upload-btn-container">
+                        <Upload size={16} />
+                        <span>{uploadingImage ? 'Uploading photo...' : 'Upload Customer Photo'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={handleImageFileChange}
+                          disabled={uploadingImage}
+                        />
+                      </label>
+                    )}
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                      Optional. Supported formats: JPG, PNG, WEBP (Max 10MB).
+                    </span>
+                  </div>
+                </div>
+
+                {/* Assigned Route Admin (Super Admin only) */}
                 {isSuperAdmin && (
                   <div>
                     <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                      Assign to Delivery Admin Route
+                      Assign to Route Admin *
                     </label>
                     <select
                       className="form-control"
@@ -585,7 +727,7 @@ export const CustomerManagement = () => {
                     >
                       {adminsList.map((a) => (
                         <option key={a._id} value={a._id}>
-                          {a.name} ({a.email})
+                          Admin: {a.name} ({a.email})
                         </option>
                       ))}
                     </select>
@@ -597,8 +739,8 @@ export const CustomerManagement = () => {
                 <button type="button" className="btn btn-outline" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? 'Generating...' : 'Create & Generate QR'}
+                <button type="submit" className="btn btn-primary" disabled={submitting || uploadingImage}>
+                  {submitting ? 'Creating Customer & QR...' : 'Create Customer & Generate Pass'}
                 </button>
               </div>
             </form>
@@ -606,14 +748,14 @@ export const CustomerManagement = () => {
         </div>
       )}
 
-      {/* Edit Customer Modal */}
+      {/* EDIT CUSTOMER MODAL */}
       {showEditModal && editingCustomer && (
         <div className="modal-overlay">
-          <div className="modal-content">
+          <div className="modal-content modal-lg">
             <div className="modal-header">
               <h3>
                 <Edit2 size={16} />
-                <span>Edit Customer Record</span>
+                <span>Edit Customer Profile</span>
               </h3>
               <button type="button" className="close-btn" onClick={() => setShowEditModal(false)}>
                 <X size={16} />
@@ -621,76 +763,144 @@ export const CustomerManagement = () => {
             </div>
 
             <form onSubmit={handleUpdateCustomer}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    Customer Full Name
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      Customer Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      Mobile Number *
+                    </label>
+                    <input
+                      type="tel"
+                      className="form-control"
+                      value={formData.mobile}
+                      onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    Mobile Number
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={formData.mobile}
-                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                    required
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      Aadhaar Card Number
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.adharNumber}
+                      onChange={(e) => setFormData({ ...formData, adharNumber: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      PAN Card Number
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.panNumber}
+                      onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
+                    />
+                  </div>
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                     Delivery Address
                   </label>
-                  <input
-                    type="text"
+                  <textarea
                     className="form-control"
+                    rows={2}
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>
 
-                {isSuperAdmin && (
+                {/* Photo Update */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                    Customer Photo
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                    {formData.image ? (
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={formData.image}
+                          alt="Customer preview"
+                          style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: 'var(--radius-xs)', border: '1px solid var(--border-medium)' }}
+                        />
+                        <button
+                          type="button"
+                          style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={() => setFormData({ ...formData, image: '' })}
+                          title="Remove image"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <label className="upload-btn-container">
+                        <Upload size={16} />
+                        <span>{uploadingImage ? 'Uploading photo...' : 'Change Customer Photo'}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={handleImageFileChange}
+                          disabled={uploadingImage}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {isSuperAdmin && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                        Reassign Route Admin
+                      </label>
+                      <select
+                        className="form-control"
+                        value={formData.adminId}
+                        onChange={(e) => setFormData({ ...formData, adminId: e.target.value })}
+                      >
+                        {adminsList.map((a) => (
+                          <option key={a._id} value={a._id}>
+                            {a.name} ({a.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   <div>
                     <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                      Reassign Route Admin
+                      Account Status
                     </label>
                     <select
                       className="form-control"
-                      value={formData.adminId}
-                      onChange={(e) => setFormData({ ...formData, adminId: e.target.value })}
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     >
-                      {adminsList.map((a) => (
-                        <option key={a._id} value={a._id}>
-                          {a.name} ({a.email})
-                        </option>
-                      ))}
+                      <option value="ACTIVE">Active Pass</option>
+                      <option value="INACTIVE">Suspended</option>
                     </select>
                   </div>
-                )}
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                    Status
-                  </label>
-                  <select
-                    className="form-control"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  >
-                    <option value="ACTIVE">Active Pass</option>
-                    <option value="INACTIVE">Suspended</option>
-                  </select>
                 </div>
               </div>
 
@@ -698,8 +908,8 @@ export const CustomerManagement = () => {
                 <button type="button" className="btn btn-outline" onClick={() => setShowEditModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={submitting}>
-                  {submitting ? 'Saving...' : 'Update Record'}
+                <button type="submit" className="btn btn-primary" disabled={submitting || uploadingImage}>
+                  {submitting ? 'Saving Changes...' : 'Save Profile Changes'}
                 </button>
               </div>
             </form>

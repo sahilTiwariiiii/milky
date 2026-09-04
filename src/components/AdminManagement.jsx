@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { useToast } from '../context/ToastContext';
+import { Pagination } from './Pagination';
 import {
   UserCheck,
   UserPlus,
@@ -12,7 +13,9 @@ import {
   Phone,
   Mail,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Upload,
+  User
 } from 'lucide-react';
 
 export const AdminManagement = () => {
@@ -21,6 +24,12 @@ export const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, totalPages: 1, totalItems: 0 });
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -34,19 +43,52 @@ export const AdminManagement = () => {
     email: '',
     password: '',
     mobile: '',
+    profileImage: '',
     status: 'ACTIVE'
   });
   const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const res = await api.uploadFile(file);
+      if (res.success && res.data?.url) {
+        setFormData((prev) => ({ ...prev, profileImage: res.data.url }));
+        showSuccess('Profile photo uploaded to S3 successfully!');
+      }
+    } catch (err) {
+      showError(err.message || 'Failed to upload photo');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const fetchAdmins = async () => {
     setLoading(true);
     try {
-      const params = {};
-      if (searchTerm) params.search = searchTerm;
+      const params = {
+        page,
+        limit
+      };
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+      if (statusFilter) params.status = statusFilter;
 
       const res = await api.getAdmins(params);
       if (res.success && res.data?.admins) {
         setAdmins(res.data.admins);
+        if (res.meta) {
+          setMeta(res.meta);
+        } else {
+          setMeta({
+            page,
+            limit,
+            totalPages: Math.ceil((res.data.admins.length || 1) / limit) || 1,
+            totalItems: res.data.admins.length
+          });
+        }
       }
     } catch (err) {
       showError(err.message || 'Failed to fetch Admins');
@@ -56,8 +98,12 @@ export const AdminManagement = () => {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [searchTerm, statusFilter]);
+
+  useEffect(() => {
     fetchAdmins();
-  }, [searchTerm]);
+  }, [page, limit, searchTerm, statusFilter]);
 
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
@@ -67,7 +113,7 @@ export const AdminManagement = () => {
       if (res.success) {
         showSuccess(`Admin "${res.data.admin.name}" created successfully!`);
         setShowAddModal(false);
-        setFormData({ name: '', email: '', password: '', mobile: '', status: 'ACTIVE' });
+        setFormData({ name: '', email: '', password: '', mobile: '', profileImage: '', status: 'ACTIVE' });
         fetchAdmins();
       }
     } catch (err) {
@@ -87,6 +133,7 @@ export const AdminManagement = () => {
         name: formData.name,
         email: formData.email,
         mobile: formData.mobile,
+        profileImage: formData.profileImage,
         status: formData.status
       };
       if (formData.password) {
@@ -128,6 +175,7 @@ export const AdminManagement = () => {
       email: admin.email,
       password: '',
       mobile: admin.mobile || '',
+      profileImage: admin.profileImage || '',
       status: admin.status
     });
     setShowEditModal(true);
@@ -169,15 +217,46 @@ export const AdminManagement = () => {
         </div>
 
         {/* Toolbar */}
-        <div className="panel-toolbar">
-          <div style={{ maxWidth: '380px', width: '100%' }}>
-            <input
-              type="text"
+        <div className="panel-toolbar no-print">
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', width: '100%' }}>
+            <div style={{ position: 'relative', maxWidth: '380px', flex: 1 }}>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search by Name, Email, or Phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: '2rem' }}
+              />
+              <Search
+                size={14}
+                style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}
+              />
+            </div>
+
+            <select
               className="form-control"
-              placeholder="Search by Name, Email, or Phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+              style={{ width: 'auto', minWidth: '150px' }}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active Staff</option>
+              <option value="INACTIVE">Suspended Staff</option>
+            </select>
+
+            {(searchTerm || statusFilter) && (
+              <button
+                type="button"
+                className="btn btn-xs btn-outline"
+                onClick={() => {
+                  setSearchTerm('');
+                  setStatusFilter('');
+                }}
+              >
+                Reset
+              </button>
+            )}
           </div>
         </div>
 
@@ -208,8 +287,23 @@ export const AdminManagement = () => {
                 {admins.map((admin, idx) => (
                   <tr key={admin._id}>
                     <td style={{ fontWeight: 700, color: 'var(--text-muted)' }}>{idx + 1}</td>
-                    <td style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-heading)' }}>
-                      {admin.name}
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        {admin.profileImage ? (
+                          <img
+                            src={admin.profileImage}
+                            alt={admin.name}
+                            style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-medium)' }}
+                          />
+                        ) : (
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-red-soft)', color: 'var(--primary-red)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem' }}>
+                            {admin.name?.charAt(0).toUpperCase() || 'A'}
+                          </div>
+                        )}
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-heading)' }}>
+                          {admin.name}
+                        </div>
+                      </div>
                     </td>
                     <td>{admin.email}</td>
                     <td>{admin.mobile || '—'}</td>
@@ -256,6 +350,16 @@ export const AdminManagement = () => {
             </table>
           </div>
         )}
+
+        {/* Pagination Controls */}
+        <Pagination
+          meta={meta}
+          onPageChange={(newPage) => setPage(newPage)}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
       </div>
 
       {/* Create Modal */}
@@ -327,6 +431,45 @@ export const AdminManagement = () => {
                     value={formData.mobile}
                     onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                   />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+                    Profile Photo (AWS S3 Upload)
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {formData.profileImage ? (
+                      <img
+                        src={formData.profileImage}
+                        alt="Preview"
+                        style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-medium)' }}
+                      />
+                    ) : (
+                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--primary-red-soft)', color: 'var(--primary-red)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <User size={20} />
+                      </div>
+                    )}
+                    <label className="btn btn-xs btn-outline" style={{ cursor: 'pointer', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Upload size={13} />
+                      <span>{uploadingImage ? 'Uploading to S3...' : 'Upload Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handlePhotoUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                    {formData.profileImage && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline"
+                        onClick={() => setFormData({ ...formData, profileImage: '' })}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -422,6 +565,45 @@ export const AdminManagement = () => {
                     <option value="ACTIVE">Active</option>
                     <option value="INACTIVE">Suspended</option>
                   </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+                    Profile Photo (AWS S3 Upload)
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    {formData.profileImage ? (
+                      <img
+                        src={formData.profileImage}
+                        alt="Preview"
+                        style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-medium)' }}
+                      />
+                    ) : (
+                      <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--primary-red-soft)', color: 'var(--primary-red)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <User size={20} />
+                      </div>
+                    )}
+                    <label className="btn btn-xs btn-outline" style={{ cursor: 'pointer', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Upload size={13} />
+                      <span>{uploadingImage ? 'Uploading to S3...' : 'Upload Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={handlePhotoUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                    {formData.profileImage && (
+                      <button
+                        type="button"
+                        className="btn btn-xs btn-outline"
+                        onClick={() => setFormData({ ...formData, profileImage: '' })}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
