@@ -204,19 +204,18 @@ export const SystemConfigView = ({ onNavigate }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {/* 1. ORGANIZATION PROFILE SETTINGS */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <Building2 size={16} />
             <span>Organization Branding & Hub Profile</span>
           </h3>
           <button
             type="button"
-            className="btn btn-xs btn-outline"
-            style={{ background: '#fff', color: 'var(--primary-red)' }}
+            className="btn btn-primary"
             onClick={handleSaveConfig}
             disabled={saving}
           >
-            <Save size={12} />
+            <Save size={14} />
             <span>{saving ? 'Saving...' : 'Save Configuration'}</span>
           </button>
         </div>
@@ -277,7 +276,7 @@ export const SystemConfigView = ({ onNavigate }) => {
 
             {/* Profile Fields */}
             <div style={{ flex: 1, minWidth: '280px', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+              <div className="responsive-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                     Organization / Dairy Name *
@@ -306,7 +305,7 @@ export const SystemConfigView = ({ onNavigate }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+              <div className="responsive-grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
                     Customer Helpline / Contact Mobile
@@ -347,7 +346,7 @@ export const SystemConfigView = ({ onNavigate }) => {
 
       {/* 2. CATEGORIES MANAGEMENT */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <Layers size={16} />
             <span>Milk & Dairy Product Categories</span>
@@ -387,13 +386,13 @@ export const SystemConfigView = ({ onNavigate }) => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.45rem',
-                    background: '#f8fafc',
-                    border: '1px solid var(--border-medium)',
-                    borderRadius: 'var(--radius-full)',
+                    background: '#ECFDF5',
+                    border: '1px solid #A7F3D0',
+                    borderRadius: '9999px',
                     padding: '0.35rem 0.85rem',
                     fontSize: '0.84rem',
                     fontWeight: 600,
-                    color: 'var(--text-heading)'
+                    color: '#047857'
                   }}
                 >
                   <span>{cat}</span>
@@ -414,7 +413,7 @@ export const SystemConfigView = ({ onNavigate }) => {
 
       {/* 3. QUICK PRODUCT CATALOG MANAGEMENT */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <Package size={16} />
             <span>Product Catalog by Category ({products.length} Products)</span>
@@ -423,8 +422,7 @@ export const SystemConfigView = ({ onNavigate }) => {
           <div style={{ display: 'flex', gap: '0.35rem' }}>
             <button
               type="button"
-              className="btn btn-xs btn-outline"
-              style={{ background: '#fff', color: 'var(--primary-red)' }}
+              className="btn btn-primary"
               onClick={() => {
                 setProductForm({
                   name: '',
@@ -435,8 +433,8 @@ export const SystemConfigView = ({ onNavigate }) => {
                 setShowAddProductModal(true);
               }}
             >
-              <Plus size={12} />
-              <span>+ Add Dairy Product</span>
+              <Plus size={15} />
+              <span>Add Dairy Product</span>
             </button>
           </div>
         </div>

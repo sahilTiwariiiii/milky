@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Printer, Download, QrCode, ShieldCheck, MapPin, Phone, CreditCard, Building2, User } from 'lucide-react';
+import { X, Printer, Download, QrCode, ShieldCheck, MapPin, Phone, Building2, UserCheck, Calendar, CheckCircle2 } from 'lucide-react';
 import { api } from '../services/api';
+import { formatDateDisplay } from '../utils/dateUtils';
 
 export const PrintableQrBadge = ({ customer, onClose, orgConfig: initialOrgConfig }) => {
   const [orgConfig, setOrgConfig] = useState(initialOrgConfig || null);
@@ -19,10 +20,10 @@ export const PrintableQrBadge = ({ customer, onClose, orgConfig: initialOrgConfi
 
   if (!customer) return null;
 
-  const orgName = orgConfig?.orgName || 'Milky Dairy';
-  const orgLogo = orgConfig?.orgLogo || '';
-  const orgTagline = orgConfig?.tagline || 'Fresh & Pure Daily Milk';
-  const orgPhone = orgConfig?.phone || '';
+  const orgName = orgConfig?.orgName || 'MILKY DAIRY DISTRIBUTION';
+  const orgTagline = orgConfig?.tagline || 'Fresh Farm Milk & Daily Dairy Supply Network';
+  const orgPhone = orgConfig?.phone || '+91 98765 43210';
+  const orgAddress = orgConfig?.address || 'Central Dairy Station';
 
   const handlePrint = () => {
     window.print();
@@ -40,118 +41,132 @@ export const PrintableQrBadge = ({ customer, onClose, orgConfig: initialOrgConfi
 
   return (
     <div className="modal-overlay printable-badge-modal">
-      <div className="modal-content" style={{ maxWidth: '480px' }}>
+      <div className="modal-content customer-pass-modal-container">
+        {/* MODAL HEADER (HIDDEN ON PRINT) */}
         <div className="modal-header no-print">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <QrCode size={20} />
-            <h3 style={{ margin: 0 }}>Customer Milk ID Pass</h3>
+            <QrCode size={18} />
+            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>Customer Digital Milk Pass</h3>
           </div>
-          <button type="button" className="close-btn" onClick={onClose}>
-            <X size={20} />
+          <button type="button" className="close-btn" onClick={onClose} title="Close Pass">
+            <X size={18} />
           </button>
         </div>
 
-        <div className="modal-body" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          {/* Printable Card Area */}
-          <div className="customer-id-card" id="printable-card">
-            {/* Top Dairy Brand Header */}
-            <div className="card-top-org-banner">
-              {orgLogo ? (
-                <img src={orgLogo} alt={orgName} className="card-org-logo-img" />
-              ) : (
-                <div className="card-org-logo-fallback">
-                  <Building2 size={16} />
+        {/* MODAL BODY WITH THE ID PASS */}
+        <div className="modal-body pass-modal-body">
+          {/* THE OFFICIAL PRINTABLE PHYSICAL CARD */}
+          <div className="official-pass-card" id="printable-card">
+            {/* 1. TOP ORG HEADER BANNER */}
+            <div className="pass-org-banner">
+              <div className="pass-org-left">
+                <img src={orgConfig?.orgLogo || '/applogo.png'} alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                <div>
+                  <div className="pass-org-name">{orgName}</div>
+                  <div className="pass-org-sub">{orgTagline}</div>
                 </div>
-              )}
-              <div className="card-org-text">
-                <div className="card-org-name">{orgName}</div>
-                <div className="card-org-tagline">{orgTagline}</div>
+              </div>
+              <div className="pass-org-pill">
+                OFFICIAL PASS
               </div>
             </div>
 
-            <div className="card-divider-stripe" />
+            {/* 2. SECURITY STRIPE */}
+            <div className="pass-security-ribbon">
+              <span>AUTHORIZED DAIRY RECIPIENT CARD</span>
+              <span>•</span>
+              <span>VERIFIED ACCESS</span>
+            </div>
 
-            <div className="card-pass-title">OFFICIAL CUSTOMER MILK PASS</div>
-
-            {/* Customer Header with Photo & Name */}
-            <div className="card-customer-profile-strip">
-              {customer.image ? (
-                <img src={customer.image} alt={customer.name} className="card-cust-avatar" />
-              ) : (
-                <div className="card-cust-avatar-placeholder">
-                  <User size={28} />
+            {/* 3. CUSTOMER IDENTITY BANNER (NO PHOTO - SLEEK NAME & BADGE) */}
+            <div className="pass-identity-section">
+              <div className="pass-identity-left">
+                <div className="pass-customer-name">{customer.name}</div>
+                <div className="pass-token-holder">
+                  <span className="pass-token-label">CUSTOMER ID:</span>
+                  <strong className="pass-token-val">{customer.qrToken}</strong>
                 </div>
-              )}
-              <div className="card-cust-title-group">
-                <div className="card-cust-name">{customer.name}</div>
-                <div className="badge-qr-token">{customer.qrToken}</div>
+              </div>
+              <div className="pass-status-chip">
+                <ShieldCheck size={14} />
+                <span>{customer.status || 'ACTIVE'}</span>
               </div>
             </div>
 
-            {/* High-Resolution QR Code */}
-            <div className="card-qr-container">
-              {customer.qrCode ? (
-                <img
-                  src={customer.qrCode}
-                  alt={`QR code for ${customer.name}`}
-                  className="badge-qr-img"
-                />
-              ) : (
-                <div className="card-no-qr">No QR Data Available</div>
-              )}
-              <div className="card-scan-instruction">Scan to Record Milk Collection</div>
+            {/* 4. CENTRAL HIGH-RESOLUTION QR CODE DISPLAY */}
+            <div className="pass-qr-showcase">
+              <div className="pass-qr-frame">
+                {customer.qrCode ? (
+                  <img
+                    src={customer.qrCode}
+                    alt={`QR code for ${customer.name}`}
+                    className="pass-qr-image"
+                  />
+                ) : (
+                  <div className="pass-no-qr">QR Code Not Available</div>
+                )}
+              </div>
+              <div className="pass-scan-caption">
+                Scan QR at delivery time to record daily milk distribution
+              </div>
             </div>
 
-            {/* Detailed Identification Specs */}
-            <div className="card-details-grid">
-              <div className="card-detail-item">
-                <span className="card-detail-label">Mobile:</span>
-                <span className="card-detail-val">{customer.mobile}</span>
+            {/* 5. STRUCTURED RECIPIENT SPECIFICATIONS */}
+            <div className="pass-specs-grid">
+              <div className="pass-spec-item">
+                <span className="pass-spec-label"><Phone size={11} /> Registered Mobile:</span>
+                <span className="pass-spec-val">{customer.mobile}</span>
+              </div>
+
+              <div className="pass-spec-item">
+                <span className="pass-spec-label"><MapPin size={11} /> Delivery Route Point:</span>
+                <span className="pass-spec-val">{customer.address || 'Standard Delivery Route'}</span>
+              </div>
+
+              <div className="pass-spec-item">
+                <span className="pass-spec-label"><UserCheck size={11} /> Assigned Route Incharge:</span>
+                <span className="pass-spec-val pass-highlight">
+                  {customer.adminId?.name || 'Authorized Hub Admin'}
+                </span>
               </div>
 
               {customer.adharNumber && (
-                <div className="card-detail-item">
-                  <span className="card-detail-label">Aadhaar:</span>
-                  <span className="card-detail-val">XXXX-XXXX-{customer.adharNumber.slice(-4) || customer.adharNumber}</span>
+                <div className="pass-spec-item">
+                  <span className="pass-spec-label">Aadhaar (Last 4):</span>
+                  <span className="pass-spec-val">•••• •••• {customer.adharNumber.slice(-4)}</span>
                 </div>
               )}
 
               {customer.panNumber && (
-                <div className="card-detail-item">
-                  <span className="card-detail-label">PAN:</span>
-                  <span className="card-detail-val">{customer.panNumber}</span>
+                <div className="pass-spec-item">
+                  <span className="pass-spec-label">PAN Number:</span>
+                  <span className="pass-spec-val">{customer.panNumber}</span>
                 </div>
               )}
-
-              <div className="card-detail-item full-width">
-                <span className="card-detail-label">Address:</span>
-                <span className="card-detail-val">{customer.address || 'Standard Local Dairy Hub'}</span>
-              </div>
-
-              <div className="card-detail-item full-width">
-                <span className="card-detail-label">Assigned Route:</span>
-                <span className="card-detail-val font-semibold text-primary">
-                  {customer.adminId?.name || 'Central Dairy Admin'}
-                </span>
-              </div>
             </div>
 
-            {/* Card Footer */}
-            <div className="card-footer-strip">
-              <div>Authorized Customer ID • {orgName}</div>
-              {orgPhone && <div>Helpline: {orgPhone}</div>}
+            {/* 6. SECURITY & AUDIT FOOTER */}
+            <div className="pass-footer-banner">
+              <div className="pass-seal-block">
+                <CheckCircle2 size={13} color="#047857" />
+                <span>MILKY TAMPER-PROOF VERIFIED LEDGER</span>
+              </div>
+              <div className="pass-helpline-block">
+                Helpline: {orgPhone}
+              </div>
             </div>
           </div>
         </div>
 
+        {/* MODAL FOOTER CONTROLS (HIDDEN ON PRINT) */}
         <div className="modal-footer no-print">
-          <button type="button" className="btn btn-secondary" onClick={handleDownloadImage}>
+          <button type="button" className="btn btn-outline" onClick={handleDownloadImage}>
             <Download size={15} />
-            <span>Download QR Image</span>
+            <span>Download QR Code</span>
           </button>
-          <button type="button" className="btn btn-primary" onClick={handlePrint}>
+          <button type="button" className="btn btn-success" onClick={handlePrint} style={{ fontWeight: 700 }}>
             <Printer size={15} />
-            <span>Print Official Pass</span>
+            <span>Print Pass / Save PDF</span>
           </button>
         </div>
       </div>

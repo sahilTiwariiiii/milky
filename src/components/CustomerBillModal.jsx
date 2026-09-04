@@ -230,67 +230,69 @@ export const CustomerBillModal = ({
                 No milk/product deliveries recorded for this selected month/period ({formatDateDisplay(startDate)} to {formatDateDisplay(endDate)}).
               </div>
             ) : (
-              <table className="bill-table bill-table-striped">
-                <thead>
-                  <tr>
-                    <th style={{ width: '35px' }}>#</th>
-                    <th>Day & Date</th>
-                    <th>Time / Shift</th>
-                    <th>Product Delivered</th>
-                    <th style={{ textAlign: 'right' }}>Rate (₹/Unit)</th>
-                    <th style={{ textAlign: 'right' }}>Quantity</th>
-                    <th style={{ textAlign: 'right' }}>Daily Total</th>
-                    <th>Delivered By</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map((tx, idx) => {
-                    const txDate = new Date(tx.createdAt);
-                    const dayName = txDate.toLocaleDateString('en-IN', { weekday: 'short' });
-                    const timeStr = txDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const hours = txDate.getHours();
-                    const shiftLabel = hours < 12 ? 'Morning' : 'Evening';
+              <div className="table-responsive">
+                <table className="bill-table bill-table-striped">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '35px' }}>#</th>
+                      <th>Day & Date</th>
+                      <th>Time / Shift</th>
+                      <th>Product Delivered</th>
+                      <th style={{ textAlign: 'right' }}>Rate (₹/Unit)</th>
+                      <th style={{ textAlign: 'right' }}>Quantity</th>
+                      <th style={{ textAlign: 'right' }}>Daily Total</th>
+                      <th>Delivered By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.map((tx, idx) => {
+                      const txDate = new Date(tx.createdAt);
+                      const dayName = txDate.toLocaleDateString('en-IN', { weekday: 'short' });
+                      const timeStr = txDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      const hours = txDate.getHours();
+                      const shiftLabel = hours < 12 ? 'Morning' : 'Evening';
 
-                    return (
-                      <tr key={tx._id || idx}>
-                        <td>{idx + 1}</td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <strong style={{ color: '#0f172a' }}>{formatDateDisplay(tx.createdAt)}</strong>
-                          <span style={{ display: 'block', fontSize: '0.68rem', color: '#64748b' }}>
-                            {dayName}
-                          </span>
-                        </td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <span>{timeStr}</span>
-                          <span style={{ display: 'block', fontSize: '0.66rem', color: '#16a34a', fontWeight: 600 }}>
-                            {shiftLabel}
-                          </span>
-                        </td>
-                        <td style={{ fontWeight: 700, color: '#0f172a' }}>
-                          {tx.productName || tx.productId?.name || 'Milk'}
-                          {tx.notes && (
-                            <span style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 'normal' }}>
-                              Note: {tx.notes}
+                      return (
+                        <tr key={tx._id || idx}>
+                          <td>{idx + 1}</td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            <strong style={{ color: '#0f172a' }}>{formatDateDisplay(tx.createdAt)}</strong>
+                            <span style={{ display: 'block', fontSize: '0.68rem', color: '#64748b' }}>
+                              {dayName}
                             </span>
-                          )}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {formatCurrency(tx.priceAtTransaction || tx.productId?.price || 0)}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                          {tx.quantity} {tx.unit || tx.productId?.unit || 'L'}
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
-                          {formatCurrency(tx.totalAmount)}
-                        </td>
-                        <td style={{ fontSize: '0.72rem', color: '#475569' }}>
-                          {tx.adminId?.name || 'Central Dairy Route'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            <span>{timeStr}</span>
+                            <span style={{ display: 'block', fontSize: '0.66rem', color: '#16a34a', fontWeight: 600 }}>
+                              {shiftLabel}
+                            </span>
+                          </td>
+                          <td style={{ fontWeight: 700, color: '#0f172a' }}>
+                            {tx.productName || tx.productId?.name || 'Milk'}
+                            {tx.notes && (
+                              <span style={{ display: 'block', fontSize: '0.68rem', color: '#64748b', fontWeight: 'normal' }}>
+                                Note: {tx.notes}
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            {formatCurrency(tx.priceAtTransaction || tx.productId?.price || 0)}
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                            {tx.quantity} {tx.unit || tx.productId?.unit || 'L'}
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
+                            {formatCurrency(tx.totalAmount)}
+                          </td>
+                          <td style={{ fontSize: '0.72rem', color: '#475569' }}>
+                            {tx.adminId?.name || 'Central Dairy Route'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
 
@@ -301,32 +303,34 @@ export const CustomerBillModal = ({
                 <Package size={13} />
                 <span>Monthly Product-wise Total Consumption</span>
               </div>
-              <table className="bill-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '40px' }}>#</th>
-                    <th>Product Category</th>
-                    <th style={{ textAlign: 'right' }}>Standard Rate</th>
-                    <th style={{ textAlign: 'right' }}>Total Quantity Taken</th>
-                    <th style={{ textAlign: 'right' }}>Total Amount (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {productSummaryList.map((item, idx) => (
-                    <tr key={`sum-${idx}`}>
-                      <td>{idx + 1}</td>
-                      <td style={{ fontWeight: 700 }}>{item.name}</td>
-                      <td style={{ textAlign: 'right' }}>{formatCurrency(item.rate)} / {item.unit}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700 }}>
-                        {item.totalQuantity} {item.unit} ({item.deliveryCount} days)
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
-                        {formatCurrency(item.totalAmount)}
-                      </td>
+              <div className="table-responsive">
+                <table className="bill-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '40px' }}>#</th>
+                      <th>Product Category</th>
+                      <th style={{ textAlign: 'right' }}>Standard Rate</th>
+                      <th style={{ textAlign: 'right' }}>Total Quantity Taken</th>
+                      <th style={{ textAlign: 'right' }}>Total Amount (₹)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {productSummaryList.map((item, idx) => (
+                      <tr key={`sum-${idx}`}>
+                        <td>{idx + 1}</td>
+                        <td style={{ fontWeight: 700 }}>{item.name}</td>
+                        <td style={{ textAlign: 'right' }}>{formatCurrency(item.rate)} / {item.unit}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                          {item.totalQuantity} {item.unit} ({item.deliveryCount} days)
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 800, color: '#0f172a' }}>
+                          {formatCurrency(item.totalAmount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 

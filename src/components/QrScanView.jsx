@@ -479,40 +479,40 @@ export const QrScanView = () => {
 
       {/* SCANNER TERMINAL PANEL */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
-          <h3>
-            <QrCode size={16} />
+        <div className="panel-banner-charcoal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', padding: '12px 16px' }}>
+          <h3 style={{ margin: 0, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', color: '#FFFFFF' }}>
+            <QrCode size={18} />
             <span>Customer QR Verification & Delivery Terminal</span>
           </h3>
 
-          <div style={{ display: 'flex', gap: '0.35rem' }}>
+          <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               type="button"
-              className={`btn btn-xs ${activeTab === 'demo' ? 'btn-primary' : 'btn-outline'}`}
-              style={activeTab === 'demo' ? { background: '#fff', color: 'var(--primary-red)' } : { background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+              className={`btn btn-sm ${activeTab === 'demo' ? 'btn-primary' : 'btn-outline'}`}
+              style={activeTab === 'demo' ? { background: 'var(--project-primary)', color: 'var(--project-charcoal-dark)', fontWeight: 700 } : { background: 'rgba(255,255,255,0.14)', color: '#FFFFFF', borderColor: 'rgba(255,255,255,0.3)', fontWeight: 600 }}
               onClick={() => setActiveTab('demo')}
             >
-              <Sparkles size={12} />
+              <Sparkles size={14} />
               <span>Customer QR Cards</span>
             </button>
 
             <button
               type="button"
-              className={`btn btn-xs ${activeTab === 'camera' ? 'btn-primary' : 'btn-outline'}`}
-              style={activeTab === 'camera' ? { background: '#fff', color: 'var(--primary-red)' } : { background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+              className={`btn btn-sm ${activeTab === 'camera' ? 'btn-primary' : 'btn-outline'}`}
+              style={activeTab === 'camera' ? { background: 'var(--project-primary)', color: 'var(--project-charcoal-dark)', fontWeight: 700 } : { background: 'rgba(255,255,255,0.14)', color: '#FFFFFF', borderColor: 'rgba(255,255,255,0.3)', fontWeight: 600 }}
               onClick={() => setActiveTab('camera')}
             >
-              <Camera size={12} />
+              <Camera size={14} />
               <span>Camera Scan</span>
             </button>
 
             <button
               type="button"
-              className={`btn btn-xs ${activeTab === 'manual' ? 'btn-primary' : 'btn-outline'}`}
-              style={activeTab === 'manual' ? { background: '#fff', color: 'var(--primary-red)' } : { background: 'rgba(255,255,255,0.15)', color: '#fff' }}
+              className={`btn btn-sm ${activeTab === 'manual' ? 'btn-primary' : 'btn-outline'}`}
+              style={activeTab === 'manual' ? { background: 'var(--project-primary)', color: 'var(--project-charcoal-dark)', fontWeight: 700 } : { background: 'rgba(255,255,255,0.14)', color: '#FFFFFF', borderColor: 'rgba(255,255,255,0.3)', fontWeight: 600 }}
               onClick={() => setActiveTab('manual')}
             >
-              <Keyboard size={12} />
+              <Keyboard size={14} />
               <span>Token Entry</span>
             </button>
           </div>
@@ -814,23 +814,23 @@ export const QrScanView = () => {
 
       {/* VERIFIED CUSTOMER PROFILE & DISTRIBUTION PANEL */}
       {scannedCustomer && (
-        <div className="enterprise-panel" style={{ border: '2px solid var(--primary-red)' }}>
-          <div className="panel-banner-red">
-            <h3>
-              <CheckCircle2 size={16} />
+        <div className="enterprise-panel" style={{ border: '2px solid var(--project-primary)' }}>
+          <div className="panel-banner-charcoal" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', padding: '12px 16px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px', color: '#FFFFFF' }}>
+              <CheckCircle2 size={18} style={{ color: 'var(--project-primary)' }} />
               <span>Verified Customer: {scannedCustomer.name}</span>
             </h3>
             <button
               type="button"
-              className="btn btn-xs btn-outline"
-              style={{ background: '#fff', color: 'var(--primary-red)' }}
+              className="btn btn-sm btn-outline"
+              style={{ background: '#FFFFFF', color: '#DC2626', borderColor: '#FECACA', fontWeight: 600 }}
               onClick={() => {
                 setScannedCustomer(null);
                 lastScannedTokenRef.current = '';
                 isProcessingRef.current = false;
               }}
             >
-              <X size={12} />
+              <X size={14} />
               <span>Clear Scan</span>
             </button>
           </div>

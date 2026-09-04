@@ -196,7 +196,7 @@ export const AdminManagement = () => {
     <div>
       {/* ENTERPRISE PANEL */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <UserCheck size={18} />
             <span>Delivery Admin & Route Staff Master</span>
@@ -204,15 +204,14 @@ export const AdminManagement = () => {
 
           <button
             type="button"
-            className="btn btn-xs btn-outline"
-            style={{ background: '#fff', color: 'var(--primary-red)' }}
+            className="btn btn-primary"
             onClick={() => {
               setFormData({ name: '', email: '', password: '', mobile: '', status: 'ACTIVE' });
               setShowAddModal(true);
             }}
           >
-            <UserPlus size={14} />
-            <span>+ Create New Admin</span>
+            <UserPlus size={15} />
+            <span>Create New Admin</span>
           </button>
         </div>
 

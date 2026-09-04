@@ -155,7 +155,7 @@ export const SuperAdminDashboard = ({ onNavigate, onOpenScanner }) => {
           <button
             type="button"
             className="btn btn-primary"
-            style={{ background: '#fff', color: 'var(--primary-red)', fontWeight: 800 }}
+            style={{ background: '#4CDC9C', color: '#2C373B', fontWeight: 700 }}
             onClick={onOpenScanner}
           >
             <QrCode size={14} />
@@ -167,18 +167,20 @@ export const SuperAdminDashboard = ({ onNavigate, onOpenScanner }) => {
       {/* 1. ENTERPRISE GLOBAL KPI TILES */}
       <div className="enterprise-kpi-grid">
         <div
-          className="kpi-tile kpi-green"
+          className="kpi-tile"
           onClick={() => onNavigate('transactions')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-green">
-            <IndianRupee size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <IndianRupee size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Today's Revenue / All Time</div>
             <div className="kpi-number">
               ₹{stats.todayRevenue.toLocaleString('en-IN')}{' '}
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '0.75rem', color: '#9E9E9E' }}>
                 (₹{stats.totalRevenue.toLocaleString('en-IN')})
               </span>
             </div>
@@ -186,29 +188,33 @@ export const SuperAdminDashboard = ({ onNavigate, onOpenScanner }) => {
         </div>
 
         <div
-          className="kpi-tile kpi-purple"
+          className="kpi-tile"
           onClick={() => onNavigate('transactions')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-purple">
-            <Layers size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <Layers size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Today's Milk Dispatched</div>
             <div className="kpi-number">
               {stats.todayVolume}{' '}
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Units</span>
+              <span style={{ fontSize: '0.75rem', color: '#9E9E9E' }}>Units</span>
             </div>
           </div>
         </div>
 
         <div
-          className="kpi-tile kpi-blue"
+          className="kpi-tile"
           onClick={() => onNavigate('customers')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-blue">
-            <Users size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <Users size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Total Customers (All Routes)</div>
@@ -217,12 +223,14 @@ export const SuperAdminDashboard = ({ onNavigate, onOpenScanner }) => {
         </div>
 
         <div
-          className="kpi-tile kpi-brown"
+          className="kpi-tile"
           onClick={() => onNavigate('admins')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-brown">
-            <UserCheck size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <UserCheck size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Delivery Route Admins</div>
@@ -231,12 +239,14 @@ export const SuperAdminDashboard = ({ onNavigate, onOpenScanner }) => {
         </div>
 
         <div
-          className="kpi-tile kpi-amber"
+          className="kpi-tile"
           onClick={() => onNavigate('products')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-amber">
-            <Package size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <Package size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Catalog Dairy Products</div>
@@ -247,7 +257,7 @@ export const SuperAdminDashboard = ({ onNavigate, onOpenScanner }) => {
 
       {/* 2. ADMIN ROUTE STAFF PERFORMANCE MONITOR */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <UserCheck size={16} />
             <span>Route Staff Daily Performance & Customer Allocation</span>

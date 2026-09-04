@@ -161,7 +161,7 @@ export const AdminDashboard = ({ onNavigate, onOpenScanner }) => {
           <button
             type="button"
             className="btn btn-primary"
-            style={{ background: '#fff', color: 'var(--primary-red)', fontWeight: 800 }}
+            style={{ background: '#4CDC9C', color: '#2C373B', fontWeight: 700 }}
             onClick={onOpenScanner}
           >
             <QrCode size={16} />
@@ -182,8 +182,8 @@ export const AdminDashboard = ({ onNavigate, onOpenScanner }) => {
             style={{
               width: `${completionPercent}%`,
               background: completionPercent === 100
-                ? '#16a34a'
-                : 'linear-gradient(90deg, #ff0013 0%, #f59e0b 100%)'
+                ? '#10b981'
+                : 'linear-gradient(90deg, #4CDC9C 0%, #FFBB31 100%)'
             }}
           />
         </div>
@@ -192,12 +192,14 @@ export const AdminDashboard = ({ onNavigate, onOpenScanner }) => {
       {/* 1. KEY ROUTE KPI TILES */}
       <div className="enterprise-kpi-grid">
         <div
-          className="kpi-tile kpi-blue"
+          className="kpi-tile"
           onClick={() => setRouteTab('ALL')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-blue">
-            <Users size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <Users size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Assigned Customers</div>
@@ -206,52 +208,60 @@ export const AdminDashboard = ({ onNavigate, onOpenScanner }) => {
         </div>
 
         <div
-          className="kpi-tile kpi-green"
+          className="kpi-tile"
           onClick={() => setRouteTab('DONE')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-green">
-            <CheckCircle2 size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <CheckCircle2 size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Completed Today</div>
-            <div className="kpi-number" style={{ color: '#15803d' }}>
+            <div className="kpi-number">
               {summary.completedToday}
             </div>
           </div>
         </div>
 
         <div
-          className="kpi-tile kpi-amber"
+          className="kpi-tile"
           onClick={() => setRouteTab('LEFT')}
           style={{ cursor: 'pointer' }}
         >
-          <div className="kpi-icon-box kpi-icon-amber">
-            <AlertCircle size={18} />
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <AlertCircle size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Left for Today (Pending)</div>
-            <div className="kpi-number" style={{ color: '#d97706' }}>
+            <div className="kpi-number" style={{ color: '#FFBB31' }}>
               {summary.pendingToday}
             </div>
           </div>
         </div>
 
-        <div className="kpi-tile kpi-purple">
-          <div className="kpi-icon-box kpi-icon-purple">
-            <Package size={18} />
+        <div className="kpi-tile">
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <Package size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Today Dispatched</div>
             <div className="kpi-number">
-              {summary.todayVolume} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>L / Units</span>
+              {summary.todayVolume} <span style={{ fontSize: '0.75rem', color: '#9E9E9E' }}>L / Units</span>
             </div>
           </div>
         </div>
 
-        <div className="kpi-tile kpi-green">
-          <div className="kpi-icon-box kpi-icon-green">
-            <IndianRupee size={18} />
+        <div className="kpi-tile">
+          <div className="kpi-icon-box">
+            <div className="inner-circle">
+              <IndianRupee size={16} />
+            </div>
           </div>
           <div>
             <div className="kpi-title">Today Revenue</div>
@@ -262,7 +272,7 @@ export const AdminDashboard = ({ onNavigate, onOpenScanner }) => {
 
       {/* 2. ENTERPRISE MANIFEST PANEL */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <ReceiptText size={16} />
             <span>Today's Customer Delivery Manifest</span>

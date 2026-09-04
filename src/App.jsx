@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider, useToast } from './context/ToastContext';
-import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Navbar';
 import { LoginView } from './components/LoginView';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
@@ -13,52 +13,16 @@ import { QrScanView } from './components/QrScanView';
 import { GiveProductModal } from './components/GiveProductModal';
 import { SystemConfigView } from './components/SystemConfigView';
 import { api } from './services/api';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Menu } from 'lucide-react';
 
 const MainLayout = () => {
   const { user, loading, isSuperAdmin } = useAuth();
   const { showSuccess, showError } = useToast();
 
   const [currentView, setCurrentView] = useState('dashboard');
-  const [summaryStats, setSummaryStats] = useState({ totalRevenue: 0, totalVolume: 0, customersCount: 0 });
   const [quickScannedCustomer, setQuickScannedCustomer] = useState(null);
-
-  const fetchGlobalStats = async () => {
-    if (!user) return;
-    try {
-      const [txRes, custRes] = await Promise.all([
-        api.getTransactions({ limit: 1 }),
-        api.getCustomers({ limit: 1 })
-      ]);
-      setSummaryStats({
-        totalRevenue: txRes.data?.summary?.totalRevenue || 0,
-        totalVolume: txRes.data?.summary?.totalVolume || 0,
-        customersCount: custRes.data?.meta?.totalItems || 0
-      });
-    } catch {}
-  };
-
-  useEffect(() => {
-    fetchGlobalStats();
-  }, [user, currentView]);
-
-  const handleQuickScan = async (token) => {
-    try {
-      const res = await api.getCustomerByQr(token);
-      if (res.success && res.data?.customer) {
-        showSuccess(`Verified Customer: ${res.data.customer.name}`);
-        setQuickScannedCustomer(res.data.customer);
-      }
-    } catch (err) {
-      if (err.status === 403) {
-        showError('ACCESS FORBIDDEN (403): Customer is assigned to another Admin!');
-      } else if (err.status === 404) {
-        showError(`Customer Not Found (404) for token "${token}"`);
-      } else {
-        showError(err.message || 'QR Verification failed');
-      }
-    }
-  };
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (loading) {
     return (
@@ -69,11 +33,29 @@ const MainLayout = () => {
         alignItems: 'center',
         justifyContent: 'center',
         gap: '0.85rem',
-        background: '#ffffff',
-        color: '#ff0013'
+        background: 'linear-gradient(180deg, #E6F4ED 0%, #EEF7F2 50%, #F7FAF8 100%)',
+        color: '#2C373B',
+        fontFamily: "'Montserrat', Arial, Helvetica, sans-serif"
       }}>
-        <Loader2 size={32} className="animate-spin" />
-        <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Loading Dairy Milk ERP System...</span>
+        <div style={{
+          width: '84px',
+          height: '84px',
+          borderRadius: '50%',
+          background: '#FFFFFF',
+          border: '3px solid #4CDC9C',
+          boxShadow: '0 8px 24px rgba(76, 220, 156, 0.28)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden'
+        }}>
+          <img src="/applogo.png" alt="Milky Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Loader2 size={20} className="animate-spin text-[#4CDC9C]" />
+          <span style={{ fontSize: '1rem', fontWeight: 700, color: '#2C373B' }}>Milky Dairy ERP</span>
+        </div>
+        <span style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>Loading Dairy Network...</span>
       </div>
     );
   }
@@ -84,49 +66,69 @@ const MainLayout = () => {
 
   return (
     <div className="app-container">
-      <Navbar
+      {/* Dedicated Left Sidebar */}
+      <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
-        onQuickScan={handleQuickScan}
-        summaryStats={summaryStats}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
       />
 
-      <main className="main-content">
-        {currentView === 'dashboard' && (
-          isSuperAdmin ? (
-            <SuperAdminDashboard
-              onNavigate={setCurrentView}
-              onOpenScanner={() => setCurrentView('scan')}
-            />
-          ) : (
-            <AdminDashboard
-              onNavigate={setCurrentView}
-              onOpenScanner={() => setCurrentView('scan')}
-            />
-          )
-        )}
+      {/* Main Content Area */}
+      <div className="app-main-wrapper">
+        {/* Mobile Header Bar (Only visible on small mobile screens) */}
+        <div className="mobile-header-bar mobile-only">
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            onClick={() => setMobileOpen(true)}
+            title="Open Menu"
+          >
+            <Menu size={20} />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img src="/applogo.png" alt="Milky Logo" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} />
+            <span className="mobile-header-title">Milky Dairy ERP</span>
+          </div>
+        </div>
 
-        {currentView === 'scan' && <QrScanView />}
+        <main className="main-content">
+          {currentView === 'dashboard' && (
+            isSuperAdmin ? (
+              <SuperAdminDashboard
+                onNavigate={setCurrentView}
+                onOpenScanner={() => setCurrentView('scan')}
+              />
+            ) : (
+              <AdminDashboard
+                onNavigate={setCurrentView}
+                onOpenScanner={() => setCurrentView('scan')}
+              />
+            )
+          )}
 
-        {currentView === 'admins' && isSuperAdmin && <AdminManagement />}
+          {currentView === 'scan' && <QrScanView />}
 
-        {currentView === 'customers' && <CustomerManagement />}
+          {currentView === 'admins' && isSuperAdmin && <AdminManagement />}
 
-        {currentView === 'products' && <ProductManagement />}
+          {currentView === 'customers' && <CustomerManagement />}
 
-        {currentView === 'transactions' && <TransactionsView />}
+          {currentView === 'products' && <ProductManagement />}
 
-        {currentView === 'settings' && isSuperAdmin && <SystemConfigView onNavigate={setCurrentView} />}
-      </main>
+          {currentView === 'transactions' && <TransactionsView />}
+
+          {currentView === 'settings' && isSuperAdmin && <SystemConfigView onNavigate={setCurrentView} />}
+        </main>
+      </div>
 
       {/* Quick Scanned Customer Modal */}
       {quickScannedCustomer && (
         <GiveProductModal
           customer={quickScannedCustomer}
           onClose={() => setQuickScannedCustomer(null)}
-          onTransactionCreated={() => {
-            fetchGlobalStats();
-          }}
+          onTransactionCreated={() => {}}
         />
       )}
     </div>

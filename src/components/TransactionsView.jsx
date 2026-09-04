@@ -200,10 +200,11 @@ export const TransactionsView = () => {
         </div>
 
         {/* Filters Toolbar */}
-        <div className="filter-toolbar no-print">
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="filter-toolbar no-print" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'stretch' }}>
+          {/* Row 1: Search & Date Range Selection */}
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', width: '100%' }}>
             {/* Search Input */}
-            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
+            <div style={{ position: 'relative', flex: '1 1 240px', minWidth: '220px' }}>
               <input
                 type="text"
                 className="form-control"
@@ -218,13 +219,13 @@ export const TransactionsView = () => {
               />
             </div>
 
-            {/* Quick Month Dropdown (Default to Current Month) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+            {/* Quick Month Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               <Calendar size={14} />
               <span>Month:</span>
               <select
                 className="form-control"
-                style={{ width: 'auto', minWidth: '180px', padding: '0.35rem 0.65rem', fontWeight: 600 }}
+                style={{ width: 'auto', minWidth: '180px', fontWeight: 600 }}
                 value={selectedMonthId}
                 onChange={(e) => {
                   const mId = e.target.value;
@@ -254,12 +255,12 @@ export const TransactionsView = () => {
             </div>
 
             {/* From Date */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               <span>From:</span>
               <input
                 type="date"
                 className="form-control"
-                style={{ width: 'auto', padding: '0.35rem 0.65rem' }}
+                style={{ width: 'auto' }}
                 value={startDate}
                 onChange={(e) => {
                   setStartDate(e.target.value);
@@ -269,12 +270,12 @@ export const TransactionsView = () => {
             </div>
 
             {/* To Date */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               <span>To:</span>
               <input
                 type="date"
                 className="form-control"
-                style={{ width: 'auto', padding: '0.35rem 0.65rem' }}
+                style={{ width: 'auto' }}
                 value={endDate}
                 onChange={(e) => {
                   setEndDate(e.target.value);
@@ -282,54 +283,59 @@ export const TransactionsView = () => {
                 }}
               />
             </div>
+          </div>
 
-            {/* Product Filter */}
-            <select
-              className="form-control"
-              style={{ width: 'auto', minWidth: '160px', padding: '0.35rem 0.65rem' }}
-              value={selectedProductId}
-              onChange={(e) => setSelectedProductId(e.target.value)}
-            >
-              <option value="">All Dairy Products</option>
-              {productsList.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Admin Filter (for Superadmin) */}
-            {isSuperAdmin && (
+          {/* Row 2: Product & Admin Selectors + Reset Action Buttons */}
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Product Filter */}
               <select
                 className="form-control"
-                style={{ width: 'auto', minWidth: '180px', padding: '0.35rem 0.65rem' }}
-                value={selectedAdminId}
-                onChange={(e) => setSelectedAdminId(e.target.value)}
+                style={{ width: 'auto', minWidth: '170px' }}
+                value={selectedProductId}
+                onChange={(e) => setSelectedProductId(e.target.value)}
               >
-                <option value="">All Delivery Admins</option>
-                {adminsList.map((a) => (
-                  <option key={a._id} value={a._id}>
-                    Route: {a.name}
+                <option value="">All Dairy Products</option>
+                {productsList.map((p) => (
+                  <option key={p._id} value={p._id}>
+                    {p.name}
                   </option>
                 ))}
               </select>
-            )}
 
-            {/* Reset & All-Time Actions */}
-            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              {/* Admin Filter (for Superadmin) */}
+              {isSuperAdmin && (
+                <select
+                  className="form-control"
+                  style={{ width: 'auto', minWidth: '190px' }}
+                  value={selectedAdminId}
+                  onChange={(e) => setSelectedAdminId(e.target.value)}
+                >
+                  <option value="">All Delivery Admins</option>
+                  {adminsList.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      Route: {a.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center' }}>
               <button
                 type="button"
-                className="btn btn-xs btn-outline"
+                className="btn btn-sm btn-outline"
                 onClick={resetFilters}
                 title="Reset back to current month"
               >
-                <RefreshCw size={11} />
+                <RefreshCw size={12} />
                 <span>Current Month</span>
               </button>
               {(startDate || endDate) && (
                 <button
                   type="button"
-                  className="btn btn-xs btn-outline"
+                  className="btn btn-sm btn-outline"
                   onClick={clearAllFilters}
                   title="Show all-time transactions without date limits"
                 >

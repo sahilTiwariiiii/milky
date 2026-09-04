@@ -281,7 +281,7 @@ export const CustomerManagement = () => {
     <div>
       {/* ENTERPRISE PANEL */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <Users size={16} />
             <span>Customer Master & QR Pass Registry</span>
@@ -289,8 +289,7 @@ export const CustomerManagement = () => {
 
           <button
             type="button"
-            className="btn btn-xs btn-outline"
-            style={{ background: '#fff', color: 'var(--primary-red)' }}
+            className="btn btn-primary"
             onClick={() => {
               setFormData({
                 ...initialFormState,
@@ -299,8 +298,8 @@ export const CustomerManagement = () => {
               setShowCreateModal(true);
             }}
           >
-            <UserPlus size={13} />
-            <span>+ Register Customer</span>
+            <UserPlus size={15} />
+            <span>Register Customer</span>
           </button>
         </div>
 
@@ -506,7 +505,7 @@ export const CustomerManagement = () => {
                           className="btn btn-xs btn-outline"
                           onClick={() => setViewingCustomer(c)}
                           title="View Full Customer Page, Daily Orders & Monthly Bill"
-                          style={{ color: 'var(--primary-red)', borderColor: '#fca5a5' }}
+                          style={{ color: '#047857', borderColor: '#A7F3D0' }}
                         >
                           <FileText size={12} />
                           <span>View & Bill</span>

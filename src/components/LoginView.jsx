@@ -10,7 +10,9 @@ import {
   Star,
   Eye,
   EyeOff,
-  KeyRound
+  KeyRound,
+  ShieldCheck,
+  CheckCircle2
 } from 'lucide-react';
 
 export const LoginView = () => {
@@ -53,61 +55,139 @@ export const LoginView = () => {
 
   return (
     <div className="login-page-container">
-      {/* Iconic Red Polka Dot Ribbon */}
-      <div className="amul-polka-ribbon" title="The Taste of India" />
-
       {/* Top Header */}
-      <header className="login-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          {orgConfig.orgLogo ? (
+      <header className="login-header" style={{
+        width: '100%',
+        maxWidth: '1040px',
+        padding: '16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '20px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            background: 'rgba(76, 220, 156, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#2C373B'
+          }}>
             <img
-              src={orgConfig.orgLogo}
-              alt="Org Logo"
-              style={{ height: '28px', width: 'auto', maxHeight: '28px', objectFit: 'contain' }}
+              src={orgConfig.orgLogo || '/applogo.png'}
+              alt="Logo"
+              style={{ height: '30px', width: '30px', borderRadius: '50%', objectFit: 'cover' }}
             />
-          ) : null}
-          <span className="brand-badge-logo">
-            {orgConfig.orgName || 'Milky Dairy'}
-          </span>
-          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-            • Dairy ERP Portal
-          </span>
+          </div>
+          <div>
+            <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2C373B', letterSpacing: '-0.02em' }}>
+              {orgConfig.orgName || 'Milky'}
+            </span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#047857', marginLeft: '6px' }}>
+              • Dairy ERP
+            </span>
+          </div>
         </div>
 
-        <div className="login-header-tagline" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary-red)' }}>
-          <span>Pure • Fresh • Farmer-Owned Dairy</span>
+        <div className="desktop-only" style={{
+          fontSize: '0.82rem',
+          fontWeight: 600,
+          color: '#2C373B',
+          background: 'rgba(255, 255, 255, 0.7)',
+          padding: '6px 14px',
+          borderRadius: '9999px',
+          border: '1px solid #A7F3D0'
+        }}>
+          Customer QR & Milk Distribution System
         </div>
       </header>
 
-      {/* Main Responsive Container */}
-      <div className="login-main-grid">
-        {/* Login Card (Positioned on top on mobile via order: 1) */}
-        <div className="login-card-section">
-          <div className="login-card">
+      {/* Main Responsive Grid */}
+      <div style={{
+        width: '100%',
+        maxWidth: '1040px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+        gap: '40px',
+        alignItems: 'center',
+        padding: '0 16px'
+      }}>
+        {/* Login Card */}
+        <div style={{ width: '100%', maxWidth: '440px', margin: '0 auto' }}>
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '16px',
+            border: '1.5px solid rgba(44, 55, 59, 0.2)',
+            boxShadow: '0 12px 30px -5px rgba(0, 0, 0, 0.08)',
+            overflow: 'hidden'
+          }}>
             {/* Card Header */}
-            <div className="login-card-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 800, fontSize: '0.98rem' }}>
-                <KeyRound size={17} />
-                <span>Management Portal Login</span>
+            <div style={{
+              background: '#23292F',
+              color: '#FFFFFF',
+              padding: '18px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700, fontSize: '1rem' }}>
+                <KeyRound size={18} style={{ color: '#4CDC9C' }} />
+                <span>Portal Sign In</span>
               </div>
-              <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.22)', padding: '0.15rem 0.5rem', borderRadius: '3px', fontWeight: 700 }}>
-                Secure Access
+              <span style={{
+                fontSize: '0.72rem',
+                background: 'rgba(76, 220, 156, 0.2)',
+                color: '#4CDC9C',
+                padding: '3px 8px',
+                borderRadius: '6px',
+                fontWeight: 600
+              }}>
+                Secure 256-Bit
               </span>
             </div>
 
-            <div className="login-card-body">
-              {/* Clean Login Form */}
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ padding: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.25rem', textAlign: 'center' }}>
+                <div style={{
+                  width: '74px',
+                  height: '74px',
+                  borderRadius: '50%',
+                  background: '#FFFFFF',
+                  border: '3px solid #4CDC9C',
+                  boxShadow: '0 6px 16px rgba(76, 220, 156, 0.28)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  marginBottom: '0.6rem'
+                }}>
+                  <img
+                    src={orgConfig.orgLogo || '/applogo.png'}
+                    alt="Milky Dairy Logo"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#2C373B', margin: 0 }}>
+                  {orgConfig.orgName || 'Milky Dairy ERP'}
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: '#047857', fontWeight: 600, marginTop: '2px' }}>
+                  Smart QR & Daily Milk Distribution
+                </span>
+              </div>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                  <label className="form-label">
                     Email Address *
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <Mail size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                    <Mail size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(44, 55, 59, 0.5)' }} />
                     <input
                       type="email"
                       className="form-control"
-                      style={{ paddingLeft: '2.2rem' }}
+                      style={{ paddingLeft: '2.4rem' }}
                       placeholder="Enter registered email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -118,16 +198,16 @@ export const LoginView = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
+                  <label className="form-label">
                     Password *
                   </label>
                   <div style={{ position: 'relative' }}>
-                    <Lock size={15} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                    <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(44, 55, 59, 0.5)' }} />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       className="form-control"
-                      style={{ paddingLeft: '2.2rem', paddingRight: '2.5rem' }}
-                      placeholder="Enter password"
+                      style={{ paddingLeft: '2.4rem', paddingRight: '2.5rem' }}
+                      placeholder="Enter account password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="current-password"
@@ -138,14 +218,13 @@ export const LoginView = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       style={{
                         position: 'absolute',
-                        right: '0.65rem',
+                        right: '0.75rem',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'none',
                         border: 'none',
-                        color: 'var(--text-muted)',
+                        color: 'rgba(44, 55, 59, 0.6)',
                         cursor: 'pointer',
-                        padding: '0.2rem',
                         display: 'flex',
                         alignItems: 'center'
                       }}
@@ -160,71 +239,84 @@ export const LoginView = () => {
                   type="submit"
                   className="btn btn-primary"
                   style={{
-                    padding: '0.75rem',
+                    padding: '11px',
                     marginTop: '0.4rem',
-                    fontSize: '0.88rem',
-                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
                     width: '100%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.4rem'
+                    gap: '0.5rem'
                   }}
                   disabled={loading}
                 >
-                  {loading ? 'Verifying Credentials...' : 'Sign In to Portal'}
-                  <ArrowRight size={15} />
+                  {loading ? 'Verifying Credentials...' : 'Sign In to Dashboard'}
+                  <ArrowRight size={16} />
                 </button>
               </form>
             </div>
           </div>
         </div>
 
-        {/* Hero Section (Positioned below login card on mobile via order: 2) */}
-        <div className="login-hero-section">
+        {/* Hero Section */}
+        <div style={{ padding: '10px' }}>
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.35rem',
-            padding: '0.25rem 0.65rem',
-            background: 'var(--primary-red-soft)',
-            border: '1px solid var(--primary-red-border)',
+            gap: '0.4rem',
+            padding: '4px 12px',
+            background: '#D1FAE5',
+            border: '1px solid #A7F3D0',
             borderRadius: '9999px',
-            fontSize: '0.74rem',
+            fontSize: '0.78rem',
             fontWeight: 700,
-            color: 'var(--primary-red)',
-            marginBottom: '1rem'
+            color: '#047857',
+            marginBottom: '1.2rem'
           }}>
-            <Milk size={13} />
-            <span>Pure Dairy Ecosystem</span>
+            <CheckCircle2 size={14} />
+            <span>Next-Gen Dairy Distribution Management</span>
           </div>
 
           <h1 style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
-            fontSize: '2.5rem',
-            fontWeight: 800,
-            color: '#1a1a1a',
-            lineHeight: 1.15,
+            fontFamily: "'Montserrat', Arial, Helvetica, sans-serif",
+            fontSize: '2.4rem',
+            fontWeight: 700,
+            color: '#2C373B',
+            lineHeight: 1.2,
             marginBottom: '1rem'
           }}>
-            The brand owned, <br />
-            shaped and powered <br />
-            <span style={{ color: 'var(--primary-red)' }}>by farmers.</span>
+            Smart Customer QR Pass & <span style={{ color: '#047857' }}>Milk Delivery ERP</span>
           </h1>
 
-          <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', lineHeight: '22px', marginBottom: '1.5rem', maxWidth: '460px' }}>
-            Enterprise Customer QR distribution, strict route admin isolation, dynamic multi-unit catalog pricing (Litre, kg, gm, ml), and live real-time billing ledger.
+          <p style={{
+            fontSize: '0.95rem',
+            color: '#4B5563',
+            lineHeight: 1.6,
+            marginBottom: '1.75rem',
+            maxWidth: '480px'
+          }}>
+            Enterprise QR-driven delivery tracking, role-based isolation across routes, dynamic multi-unit pricing catalogs (Litre, Kg, Pack), and automated customer billing records.
           </p>
 
-          <div className="hero-stats" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.82rem', fontWeight: 600 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Star size={14} fill="#f59e0b" color="#f59e0b" />
-              <span><strong>4.9</strong> Rating</span>
+          <div style={{
+            display: 'flex',
+            gap: '1.5rem',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            color: '#6B7280',
+            fontSize: '0.85rem',
+            fontWeight: 600
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Star size={15} fill="#FFBB31" color="#FFBB31" />
+              <span style={{ color: '#2C373B' }}><strong>99.9%</strong> Route Accuracy</span>
             </div>
             <span>•</span>
-            <div>3.6 Million+ Farmers</div>
-            <span>•</span>
-            <div>Daily Fresh Distribution</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <ShieldCheck size={15} style={{ color: '#4CDC9C' }} />
+              <span>Admin Route Isolation</span>
+            </div>
           </div>
         </div>
       </div>

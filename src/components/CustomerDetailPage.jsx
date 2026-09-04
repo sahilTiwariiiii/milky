@@ -283,34 +283,34 @@ export const CustomerDetailPage = ({
     <div className="customer-dedicated-page">
       {/* 1. TOP NAVIGATION & BREADCRUMB BAR */}
       <div className="page-nav-bar no-print">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="page-nav-left">
           <button
             type="button"
             className="btn btn-sm btn-outline back-btn"
             onClick={onBack}
           >
             <ArrowLeft size={16} />
-            <span>Back to Customers</span>
+            <span>Back</span>
           </button>
 
           <div className="breadcrumb-trail">
-            <span>Customer Directory</span>
+            <span>Customers</span>
             <ChevronRight size={14} />
             <strong>{customer.name}</strong>
             <span className="badge-qr-token" style={{ marginLeft: '0.35rem' }}>{customer.qrToken}</span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="page-nav-actions">
           <button
             type="button"
             className="btn btn-sm btn-success"
             onClick={handleOpenBillModal}
             disabled={loadingAllForBill}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}
           >
             <FileText size={15} />
-            <span>{loadingAllForBill ? 'Preparing Bill...' : 'Generate Monthly Bill'}</span>
+            <span>{loadingAllForBill ? 'Preparing...' : 'Generate Bill'}</span>
           </button>
 
           <button
@@ -330,7 +330,7 @@ export const CustomerDetailPage = ({
             style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
           >
             <Printer size={14} />
-            <span>Print ID Pass</span>
+            <span>Print Pass</span>
           </button>
 
           {onEditCustomer && (
@@ -457,16 +457,7 @@ export const CustomerDetailPage = ({
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button
-              type="button"
-              className="btn btn-sm btn-success"
-              onClick={handleOpenBillModal}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 800 }}
-            >
-              <FileText size={14} />
-              <span>Generate Monthly Bill</span>
-            </button>
+          <div className="ledger-header-actions" style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               type="button"
               className="btn btn-sm btn-outline"
@@ -567,7 +558,7 @@ export const CustomerDetailPage = ({
               <div>
                 <span className="kpi-card-title">Total Volume Delivered</span>
                 <div className="kpi-card-val">
-                  {(Number(summary.totalVolume) || 0).toFixed(2)}{' '}
+                  {((Number(summary.totalVolume) > 0 ? Number(summary.totalVolume) : transactions.reduce((acc, curr) => acc + (Number(curr.quantity) || 0), 0)) || 0).toFixed(2)}{' '}
                   <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Units / Litres</span>
                 </div>
                 <span className="kpi-card-sub">Daily dairy supply quantity</span>
@@ -601,7 +592,7 @@ export const CustomerDetailPage = ({
           )}
 
           {/* 5. DAILY ORDERS LEDGER TABLE */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1rem 0 0.5rem 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1rem 0 0.5rem 0', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-heading)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <Package size={15} />
               <span>Daily Milk & Product Deliveries ({meta.totalItems || 0})</span>
@@ -642,7 +633,11 @@ export const CustomerDetailPage = ({
               </button>
             </div>
           ) : (
-            <div className="table-responsive" style={{ border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-sm)' }}>
+            <div>
+              <div className="mobile-scroll-hint mobile-only">
+                ↔ Swipe table horizontally to view full ledger details
+              </div>
+              <div className="table-responsive" style={{ border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-sm)' }}>
               <table className="enterprise-table">
                 <thead>
                   <tr>
@@ -711,6 +706,7 @@ export const CustomerDetailPage = ({
                 </tbody>
               </table>
             </div>
+          </div>
           )}
 
           {/* PAGINATION */}

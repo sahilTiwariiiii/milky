@@ -219,7 +219,7 @@ export const ProductManagement = () => {
     <div>
       {/* ENTERPRISE PANEL */}
       <div className="enterprise-panel">
-        <div className="panel-banner-red">
+        <div className="panel-banner-charcoal">
           <h3>
             <Package size={16} />
             <span>Product Catalog & Multi-Unit Pricing Master</span>
@@ -228,32 +228,31 @@ export const ProductManagement = () => {
           {isSuperAdmin && (
             <button
               type="button"
-              className="btn btn-xs btn-outline"
-              style={{ background: '#fff', color: 'var(--primary-red)' }}
+              className="btn btn-primary"
               onClick={() => {
                 setFormData({ name: '', category: 'Dairy', unitSelect: 'litre', customUnit: '', price: '', status: 'ACTIVE' });
                 setShowAddModal(true);
               }}
             >
-              <Plus size={12} />
-              <span>+ Add Product</span>
+              <Plus size={15} />
+              <span>Add Product</span>
             </button>
           )}
         </div>
 
         {/* Snapshot Guarantee Notice */}
         <div style={{
-          background: 'var(--primary-red-soft)',
-          borderBottom: '1px solid var(--primary-red-border)',
+          background: '#ECFDF5',
+          borderBottom: '1px solid #A7F3D0',
           padding: '0.65rem 1rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
           fontSize: '0.78rem',
-          color: 'var(--primary-red-dark)',
+          color: '#047857',
           fontWeight: 600
         }}>
-          <Sparkles size={15} style={{ color: 'var(--primary-red)', flexShrink: 0 }} />
+          <Sparkles size={15} style={{ color: '#059669', flexShrink: 0 }} />
           <span>
             <strong>Flexible Units & Price Snapshot Guarantee:</strong> Products can be priced by Litre, Per Pack, Kilogram, Pouch, Bottle, Cup, or custom units. Historical orders always preserve their exact unit rate.
           </span>
@@ -276,30 +275,32 @@ export const ProductManagement = () => {
             />
           </div>
 
-          <select
-            className="form-control"
-            style={{ width: 'auto', minWidth: '160px' }}
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {availableCategories.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              className="form-control"
+              style={{ width: 'auto', minWidth: '160px' }}
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {availableCategories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
 
-          <select
-            className="form-control"
-            style={{ width: 'auto', minWidth: '140px' }}
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-          >
-            <option value="">All Statuses</option>
-            <option value="ACTIVE">Active Only</option>
-            <option value="INACTIVE">Inactive Only</option>
-          </select>
+            <select
+              className="form-control"
+              style={{ width: 'auto', minWidth: '140px' }}
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active Only</option>
+              <option value="INACTIVE">Inactive Only</option>
+            </select>
+          </div>
 
           {(search || selectedCategory || selectedStatus) && (
             <button
