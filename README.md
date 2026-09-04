@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Customer QR & Milk/Product Management System — Backend
 
 A robust, enterprise-grade backend built with **Node.js**, **Express**, and **MongoDB (Mongoose)** for managing customer QR identification, product catalogs, customer assignment, product distribution transactions, and historical records.

@@ -6,9 +6,10 @@
   "type": "commonjs",
   "scripts": {
     "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
     "dev:backend": "nodemon src/server.js",
     "dev:frontend": "npm run dev --prefix frontend",
-    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "npm run build --prefix frontend",
     "seed": "node src/seeds/seed.js",
     "test": "jest --runInBand --forceExit"
@@ -27,23 +28,6 @@
   "author": "Antigravity Team",
   "license": "ISC",
   "dependencies": {
-<<<<<<< HEAD
-    "@capacitor/android": "^8.5.1",
-    "@capacitor/core": "^8.5.1",
-    "canvas-confetti": "^1.9.4",
-    "html5-qrcode": "^2.3.8",
-    "lucide-react": "^1.39.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
-  },
-  "devDependencies": {
-    "@capacitor/cli": "^8.5.1",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.1.0",
-    "oxlint": "^1.79.0",
-    "vite": "^8.2.2"
-=======
     "@aws-sdk/client-s3": "^3.1124.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
@@ -64,6 +48,5 @@
     "mongodb-memory-server": "^10.1.4",
     "nodemon": "^3.1.9",
     "supertest": "^7.1.0"
->>>>>>> 6b8afba5f8c13d5bf3766ec9ab030ba6ed9cca58
   }
 }
