@@ -5,6 +5,7 @@ import { useToast } from '../context/ToastContext';
 import { GiveProductModal } from './GiveProductModal';
 import { PrintableQrBadge } from './PrintableQrBadge';
 import { Pagination } from './Pagination';
+import { CustomerDetailPage } from './CustomerDetailPage';
 import {
   Users,
   UserPlus,
@@ -36,6 +37,9 @@ export const CustomerManagement = () => {
   const [adminsList, setAdminsList] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Dedicated Page Customer View
+  const [viewingCustomer, setViewingCustomer] = useState(null);
+
   // Pagination & Meta
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -52,7 +56,6 @@ export const CustomerManagement = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [activeBadgeCustomer, setActiveBadgeCustomer] = useState(null);
   const [activeGiveProductCustomer, setActiveGiveProductCustomer] = useState(null);
-  const [viewCustomerModal, setViewCustomerModal] = useState(null);
 
   // Form State
   const initialFormState = {
@@ -198,6 +201,9 @@ export const CustomerManagement = () => {
         setShowEditModal(false);
         setEditingCustomer(null);
         fetchCustomers();
+        if (viewingCustomer && (viewingCustomer._id === editingCustomer._id || viewingCustomer.id === editingCustomer._id)) {
+          setViewingCustomer(res.data.customer);
+        }
       }
     } catch (err) {
       showError(err.message || 'Failed to update customer');
@@ -216,7 +222,9 @@ export const CustomerManagement = () => {
       if (res.success && res.data?.customer) {
         showSuccess(`New QR Pass Generated! Token: ${res.data.customer.qrToken}`);
         fetchCustomers();
-        setViewCustomerModal(res.data.customer);
+        if (viewingCustomer && (viewingCustomer._id === customer._id || viewingCustomer.id === customer._id)) {
+          setViewingCustomer(res.data.customer);
+        }
       }
     } catch (err) {
       showError(err.message || 'Failed to regenerate QR pass');
@@ -252,6 +260,22 @@ export const CustomerManagement = () => {
     });
     setShowEditModal(true);
   };
+
+  // Dedicated Page: When customer is selected, render full page instead of modal
+  if (viewingCustomer) {
+    return (
+      <CustomerDetailPage
+        customer={viewingCustomer}
+        onBack={() => {
+          setViewingCustomer(null);
+          fetchCustomers();
+        }}
+        onEditCustomer={(cust) => {
+          openEditModal(cust);
+        }}
+      />
+    );
+  }
 
   return (
     <div>
@@ -384,14 +408,16 @@ export const CustomerManagement = () => {
                             src={c.profileImage || c.image}
                             alt={c.name}
                             className="table-avatar-img"
-                            onClick={() => setViewCustomerModal(c)}
+                            onClick={() => setViewingCustomer(c)}
                             style={{ cursor: 'pointer' }}
+                            title="Click to view Customer Profile & Daily Orders"
                           />
                         ) : (
                           <div
                             className="table-avatar-fallback"
-                            onClick={() => setViewCustomerModal(c)}
+                            onClick={() => setViewingCustomer(c)}
                             style={{ cursor: 'pointer' }}
+                            title="Click to view Customer Profile & Daily Orders"
                           >
                             {c.name.charAt(0).toUpperCase()}
                           </div>
@@ -399,7 +425,8 @@ export const CustomerManagement = () => {
                         <div>
                           <div
                             style={{ fontWeight: 700, color: 'var(--text-heading)', cursor: 'pointer' }}
-                            onClick={() => setViewCustomerModal(c)}
+                            onClick={() => setViewingCustomer(c)}
+                            title="Click to view Customer Profile & Daily Orders"
                           >
                             {c.name}
                           </div>
@@ -418,8 +445,8 @@ export const CustomerManagement = () => {
                             src={c.qrCode}
                             alt={`QR for ${c.name}`}
                             className="table-qr-thumb"
-                            title="Click to view QR Pass & Details"
-                            onClick={() => setViewCustomerModal(c)}
+                            title="Click to view Customer Profile & Daily Orders"
+                            onClick={() => setViewingCustomer(c)}
                           />
                         ) : (
                           <div style={{ width: '42px', height: '42px', background: '#f5ebe0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -431,10 +458,10 @@ export const CustomerManagement = () => {
                           <button
                             type="button"
                             style={{ background: 'none', border: 'none', color: 'var(--primary-red)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer', padding: 0, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '2px' }}
-                            onClick={() => setViewCustomerModal(c)}
+                            onClick={() => setViewingCustomer(c)}
                           >
                             <Eye size={11} />
-                            <span>View Card</span>
+                            <span>View Details</span>
                           </button>
                         </div>
                       </div>
@@ -474,6 +501,17 @@ export const CustomerManagement = () => {
 
                     <td style={{ textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '0.3rem' }}>
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-outline"
+                          onClick={() => setViewingCustomer(c)}
+                          title="View Full Customer Page, Daily Orders & Monthly Bill"
+                          style={{ color: 'var(--primary-red)', borderColor: '#fca5a5' }}
+                        >
+                          <FileText size={12} />
+                          <span>View & Bill</span>
+                        </button>
+
                         <button
                           type="button"
                           className="btn btn-xs btn-success"
@@ -541,105 +579,6 @@ export const CustomerManagement = () => {
           }}
         />
       </div>
-
-      {/* FULL CUSTOMER DETAILS MODAL */}
-      {viewCustomerModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '480px' }}>
-            <div className="modal-header">
-              <h3>
-                <QrCode size={16} />
-                <span>Customer Identity & QR Pass</span>
-              </h3>
-              <button type="button" className="close-btn" onClick={() => setViewCustomerModal(null)}>
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '0.85rem' }}>
-              {/* Photo & QR Strip */}
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'center' }}>
-                {viewCustomerModal.image ? (
-                  <img
-                    src={viewCustomerModal.image}
-                    alt={viewCustomerModal.name}
-                    style={{ width: '100px', height: '100px', borderRadius: 'var(--radius-sm)', objectFit: 'cover', border: '2px solid var(--border-medium)' }}
-                  />
-                ) : (
-                  <div style={{ width: '100px', height: '100px', borderRadius: 'var(--radius-sm)', background: '#f5ebe0', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-red)', fontWeight: 800, fontSize: '2rem' }}>
-                    {viewCustomerModal.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-
-                <div style={{
-                  background: '#ffffff',
-                  border: '2px solid var(--primary-red)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '6px',
-                  display: 'inline-flex',
-                  flexDirection: 'column',
-                  alignItems: 'center'
-                }}>
-                  <img
-                    src={viewCustomerModal.qrCode}
-                    alt={`QR for ${viewCustomerModal.name}`}
-                    style={{ width: '100px', height: '100px' }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <h4 style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-heading)' }}>
-                  {viewCustomerModal.name}
-                </h4>
-                <div className="badge-qr-token" style={{ display: 'inline-block', marginTop: '0.25rem' }}>
-                  {viewCustomerModal.qrToken}
-                </div>
-              </div>
-
-              {/* Identity Details Card */}
-              <div style={{ width: '100%', textAlign: 'left', background: '#fcfaf8', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-xs)', padding: '0.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.82rem' }}>
-                <div><strong>📱 Mobile:</strong> {viewCustomerModal.mobile}</div>
-                <div><strong>📍 Address:</strong> {viewCustomerModal.address || 'Standard Delivery Hub'}</div>
-                <div><strong>🆔 Aadhaar Number:</strong> {viewCustomerModal.adharNumber || 'Not provided'}</div>
-                <div><strong>📄 PAN Card Number:</strong> {viewCustomerModal.panNumber || 'Not provided'}</div>
-                <div><strong>🚚 Assigned Route Admin:</strong> <span style={{ color: 'var(--primary-red)', fontWeight: 700 }}>{viewCustomerModal.adminId?.name || 'Unassigned'}</span></div>
-                <div><strong>⚡ Status:</strong> <span className={viewCustomerModal.status === 'ACTIVE' ? 'badge-status-green' : 'badge-status-red'}>{viewCustomerModal.status}</span></div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  style={{ flex: 1 }}
-                  onClick={() => {
-                    const cust = viewCustomerModal;
-                    setViewCustomerModal(null);
-                    setActiveGiveProductCustomer(cust);
-                  }}
-                >
-                  <Package size={14} />
-                  <span>Give Milk</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => {
-                    const cust = viewCustomerModal;
-                    setViewCustomerModal(null);
-                    setActiveBadgeCustomer(cust);
-                  }}
-                >
-                  <Printer size={14} />
-                  <span>Print Pass</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* CREATE CUSTOMER MODAL WITH AADHAAR, PAN, ADDRESS, PHOTO */}
       {showCreateModal && (

@@ -4,6 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Pagination } from './Pagination';
 import {
+  getCurrentMonthRange,
+  getMonthOptions,
+  formatDateDisplay
+} from '../utils/dateUtils';
+import {
   ReceiptText,
   Calendar,
   IndianRupee,
@@ -29,10 +34,12 @@ export const TransactionsView = () => {
   const [limit, setLimit] = useState(20);
   const [meta, setMeta] = useState({ page: 1, limit: 20, totalPages: 1, totalItems: 0 });
 
-  // Filters
+  // Filters - default to CURRENT MONTH
+  const monthOptions = getMonthOptions(12);
+  const [selectedMonthId, setSelectedMonthId] = useState(monthOptions[0]?.id || '');
   const [search, setSearch] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(() => getCurrentMonthRange().startDate);
+  const [endDate, setEndDate] = useState(() => getCurrentMonthRange().endDate);
   const [selectedAdminId, setSelectedAdminId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
   const [adminsList, setAdminsList] = useState([]);
@@ -100,6 +107,17 @@ export const TransactionsView = () => {
   }, [page, limit, search, startDate, endDate, selectedAdminId, selectedProductId, user]);
 
   const resetFilters = () => {
+    const range = getCurrentMonthRange();
+    setSelectedMonthId(monthOptions[0]?.id || '');
+    setSearch('');
+    setStartDate(range.startDate);
+    setEndDate(range.endDate);
+    setSelectedAdminId('');
+    setSelectedProductId('');
+  };
+
+  const clearAllFilters = () => {
+    setSelectedMonthId('ALL_TIME');
     setSearch('');
     setStartDate('');
     setEndDate('');
@@ -136,36 +154,56 @@ export const TransactionsView = () => {
             <ReceiptText size={22} />
           </div>
           <div>
-            <div className="kpi-title">Transactions Recorded</div>
+            <div className="kpi-title">Total Transactions Logged</div>
             <div className="kpi-number">{summary.totalTransactions}</div>
           </div>
         </div>
       </div>
 
-      {/* 2. ENTERPRISE LEDGER PANEL */}
-      <div className="enterprise-panel">
-        <div className="panel-banner-red">
-          <h3>
-            <ReceiptText size={18} />
-            <span>Distribution Billing Ledger & Audit Trail</span>
-          </h3>
+      {/* 2. TRANSACTIONS LEDGER TABLE CARD */}
+      <div className="card-surface">
+        <div className="card-surface-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div>
+            <div className="card-surface-title">
+              <ReceiptText size={16} />
+              <span>Distribution Billing Ledger & Audit Trail</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              <span>Period:</span>
+              <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '1px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                {startDate && endDate ? `${formatDateDisplay(startDate)} to ${formatDateDisplay(endDate)}` : startDate ? `From ${formatDateDisplay(startDate)}` : endDate ? `Up to ${formatDateDisplay(endDate)}` : 'All Time'}
+              </span>
+              <span>• Default Current Month Active</span>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            className="btn btn-xs btn-outline no-print"
-            style={{ background: '#fff', color: 'var(--primary-red)' }}
-            onClick={() => window.print()}
-          >
-            <Printer size={13} />
-            <span>Print Ledger</span>
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              onClick={fetchTransactions}
+              title="Refresh ledger records"
+            >
+              <RefreshCw size={13} />
+              <span>Refresh Ledger</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm btn-outline"
+              onClick={() => window.print()}
+              title="Print ledger report"
+            >
+              <Printer size={13} />
+              <span>Print Ledger</span>
+            </button>
+          </div>
         </div>
 
-        {/* Toolbar with Comprehensive Filters */}
-        <div className="panel-toolbar no-print">
-          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center', width: '100%' }}>
+        {/* Filters Toolbar */}
+        <div className="filter-toolbar no-print">
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
             {/* Search Input */}
-            <div style={{ position: 'relative', minWidth: '220px', flex: 1 }}>
+            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
               <input
                 type="text"
                 className="form-control"
@@ -180,16 +218,53 @@ export const TransactionsView = () => {
               />
             </div>
 
-            {/* From Date */}
+            {/* Quick Month Dropdown (Default to Current Month) */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               <Calendar size={14} />
+              <span>Month:</span>
+              <select
+                className="form-control"
+                style={{ width: 'auto', minWidth: '180px', padding: '0.35rem 0.65rem', fontWeight: 600 }}
+                value={selectedMonthId}
+                onChange={(e) => {
+                  const mId = e.target.value;
+                  setSelectedMonthId(mId);
+                  if (mId === 'ALL_TIME') {
+                    setStartDate('');
+                    setEndDate('');
+                  } else if (mId === 'CUSTOM') {
+                    // custom date pickers
+                  } else {
+                    const matched = monthOptions.find((m) => m.id === mId);
+                    if (matched) {
+                      setStartDate(matched.startDate);
+                      setEndDate(matched.endDate);
+                    }
+                  }
+                }}
+              >
+                {monthOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                ))}
+                <option value="CUSTOM">Custom Date Range...</option>
+                <option value="ALL_TIME">All Time (No Date Filter)</option>
+              </select>
+            </div>
+
+            {/* From Date */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
               <span>From:</span>
               <input
                 type="date"
                 className="form-control"
                 style={{ width: 'auto', padding: '0.35rem 0.65rem' }}
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setSelectedMonthId('CUSTOM');
+                }}
               />
             </div>
 
@@ -201,7 +276,10 @@ export const TransactionsView = () => {
                 className="form-control"
                 style={{ width: 'auto', padding: '0.35rem 0.65rem' }}
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setSelectedMonthId('CUSTOM');
+                }}
               />
             </div>
 
@@ -237,16 +315,28 @@ export const TransactionsView = () => {
               </select>
             )}
 
-            {/* Reset Button */}
-            {(search || startDate || endDate || selectedAdminId || selectedProductId) && (
+            {/* Reset & All-Time Actions */}
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
               <button
                 type="button"
                 className="btn btn-xs btn-outline"
                 onClick={resetFilters}
+                title="Reset back to current month"
               >
-                Reset Filters
+                <RefreshCw size={11} />
+                <span>Current Month</span>
               </button>
-            )}
+              {(startDate || endDate) && (
+                <button
+                  type="button"
+                  className="btn btn-xs btn-outline"
+                  onClick={clearAllFilters}
+                  title="Show all-time transactions without date limits"
+                >
+                  <span>All Time</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

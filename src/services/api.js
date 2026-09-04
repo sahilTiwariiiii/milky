@@ -233,5 +233,18 @@ export const api = {
 
   getTransactionById(id) {
     return this.request(`/transactions/${id}`);
+  },
+
+  updateTransaction(id, data) {
+    return this.request(`/transactions/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  deleteTransaction(id) {
+    return this.request(`/transactions/${id}`, {
+      method: 'DELETE'
+    });
   }
 };
